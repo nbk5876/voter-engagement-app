@@ -44,8 +44,6 @@ def respond_to_voter():
 
 It is January 2026 and you are responding for Kshama Sawant who is an Economist and former Member of the Seattle City Council.
 
-Perform a web search to find any late breaking information about Kshama Sawant's policies.
-
 Kshama Sawant, the socialist who served a decade on the Seattle City Council, launched a “working-class, antiwar, anti-genocide” campaign Monday to unseat incumbent Democratic U.S. Rep. Adam Smith in the 2026 election. 
 
 At her campaign kick-off in Seattle, Sawant called for a $25 an hour minimum wage, universal health care and a halt in U.S. military aid to Israel for its ongoing offensive against Hamas. Sawant did not seek re-election in 2023 as she established Workers Strike Back, an activist group focused on pro-labor causes and other issues.
