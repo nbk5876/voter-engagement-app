@@ -1,8 +1,11 @@
-# Tax Data Evaluator - Development Environment
+# Voter Engagement Response App – Development Environment
 
-A simple Python web application that collects tax data through an HTML form and uses OpenAI API to provide tax insights.
+A simple Python web application that collects voter questions or comments through an HTML form and uses the OpenAI API to generate draft responses. This application is intended to support civic engagement by helping candidates, volunteers, or organizers respond to voter input in a consistent and structured way.
+
+This repository is a development and prototyping environment.
 
 ## Features
+
 
 ✅ Mobile-friendly responsive design  
 ✅ Flask backend with Python  
@@ -14,13 +17,13 @@ A simple Python web application that collects tax data through an HTML form and 
 ## Project Structure
 
 ```
-tax-app/
-├── app.py                 # Main Flask application
+voter-app/
+├── app.py # Main Flask application
 ├── templates/
-│   └── index.html        # HTML form page
-├── requirements.txt      # Python dependencies
-├── .env.example         # Environment variable template
-└── README.md           # This file
+│ └── index.html # Voter response form
+├── requirements.txt # Python dependencies
+├── .env.example # Environment variable template
+└── README.md # This file
 ```
 
 ## Setup Instructions
@@ -30,7 +33,7 @@ tax-app/
 Make sure you have Python 3.8+ installed, then install the required packages:
 
 ```bash
-cd tax-app
+cd voter-app
 pip install -r requirements.txt
 ```
 
@@ -85,6 +88,15 @@ Open your browser and go to:
 3. **Flask processes the data** and sends it to OpenAI API
 4. **OpenAI analyzes the tax information** and returns insights
 5. **Results are displayed** at the bottom of the same page
+
+How It Works
+
+1. **A voter fills out the form with their name, identifier, and question or comment
+2. **Form data is submitted to the Flask backend via POST
+3. **Flask constructs a prompt using the voter input
+4. **OpenAI generates a draft response
+5. **The response is displayed on the same page for review
+
 
 ## API Usage
 
