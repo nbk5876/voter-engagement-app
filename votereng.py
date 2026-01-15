@@ -1,5 +1,5 @@
 """
-Name: app.py
+Name: votereng.py
 Simple Flask application for voter engagement response using OpenAI API
 """
 from flask import Flask, render_template, request, jsonify
