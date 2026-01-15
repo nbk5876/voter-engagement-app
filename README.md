@@ -18,7 +18,7 @@ This repository is a development and prototyping environment.
 
 ```
 voter-app/
-├── app.py # Main Flask application
+├── votereng.py # Main Flask application
 ├── templates/
 │ └── index.html # Voter response form
 ├── requirements.txt # Python dependencies
@@ -70,7 +70,7 @@ export OPENAI_API_KEY='sk-your-actual-api-key-here'
 ### 3. Run the Application
 
 ```bash
-python app.py
+python votereng.py
 ```
 
 The server will start at `http://localhost:5000`
