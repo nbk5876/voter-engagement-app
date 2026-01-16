@@ -39,6 +39,18 @@
             font-size: 1.8rem;
             margin-bottom: 10px;
         }
+
+        /* PR #2: DEV/TST personality label */
+        .dev-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
         
         .form-container {
             padding: 30px 20px;
@@ -219,6 +231,12 @@
     <div class="container">
         <div class="header">
             <h1>District 9 - Voter Engagement Response Form</h1>
+
+            {% if show_debug %}
+            <div class="dev-badge">
+                Personality: {{ candidate_name }} ({{ candidate_key }})
+            </div>
+            {% endif %}
         </div>
         
         <div class="form-container">
@@ -292,8 +310,8 @@
             submitBtn.disabled = true;
             
             try {
-                // Send request to backend
-                const response = await fetch('/respond', {
+                // PR #2: include query string so /respond sees ?ca= and ?mode=
+                const response = await fetch('/respond' + window.location.search, {
                     method: 'POST',
                     body: formData
                 });

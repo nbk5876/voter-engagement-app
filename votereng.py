@@ -1,58 +1,92 @@
 """
 Name: votereng.py
 Simple Flask application for voter engagement response using OpenAI API
+
+PR #2:
+- Candidate personality selection via query parameter (?ca=)
+- DEV/TST mode support via (?mode=DEV|TST)
 """
+
 from flask import Flask, render_template, request, jsonify
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# environment variables from .env file
+from personality import (
+    get_candidate,
+    load_candidate_context,
+    should_show_debug,
+)
+
+# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 
 # Initialize OpenAI client
-# You'll need to set your OPENAI_API_KEY environment variable
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-@app.route('/')
+
+# --------------------------------------------------
+# /
+# --------------------------------------------------
+@app.route("/", methods=["GET"])
 def index():
-    """Render the main form page"""
-    return render_template('index.html')
+    """
+    Render the main form page.
 
-#---------------------------------
-# /respond route
-#---------------------------------
-@app.route('/respond', methods=['POST'])
+    PR #2:
+    - Reads ?ca= and ?mode=
+    - Displays selected personality only in DEV/TST mode
+    """
+    candidate = get_candidate(request.args)
+    show_debug = should_show_debug(request.args)
+
+    return render_template(
+        "index.html",
+        show_debug=show_debug,
+        candidate_key=candidate.key,
+        candidate_name=candidate.display_name,
+    )
+
+
+# --------------------------------------------------
+# /respond
+# --------------------------------------------------
+@app.route("/respond", methods=["POST"])
 def respond_to_voter():
     """
-    Handle form submission and call OpenAI API to generate response
+    Handle form submission and call OpenAI API to generate response.
+
+    PR #2:
+    - Reads ?ca= and ?mode= from query string
+    - Loads candidate context from ./context/<candidate>.txt
     """
     try:
-        # Get form data
-        name = request.form.get('name', '')
-        voter_id = request.form.get('voter_id', '')
-        comment = request.form.get('comment', '')
-        
-        # Validate input
+        # ----------------------------
+        # Read form inputs
+        # ----------------------------
+        name = request.form.get("name", "").strip()
+        voter_id = request.form.get("voter_id", "").strip()
+        comment = request.form.get("comment", "").strip()
+
         if not name or not voter_id or not comment:
-            return jsonify({'error': 'Please provide name, voter ID, and comment'}), 400
-        
-        # Create prompt for OpenAI
-        prompt = f"""You are responding to a voter engagement comment. Please provide a thoughtful, respectful response. 
+            return jsonify(
+                {"error": "Please provide name, voter ID, and comment"}
+            ), 400
 
-It is January 2026 and you are responding for Kshama Sawant who is an Economist and former Member of the Seattle City Council.
+        # ----------------------------
+        # Candidate personality
+        # ----------------------------
+        candidate = get_candidate(request.args)
+        candidate_context = load_candidate_context(candidate)
 
-Kshama Sawant, the socialist who served a decade on the Seattle City Council, launched a “working-class, antiwar, anti-genocide” campaign Monday to unseat incumbent Democratic U.S. Rep. Adam Smith in the 2026 election. 
+        # ----------------------------
+        # Build prompt
+        # ----------------------------
+        prompt = f"""You are responding to a voter engagement comment. Please provide a thoughtful, respectful response.
 
-At her campaign kick-off in Seattle, Sawant called for a $25 an hour minimum wage, universal health care and a halt in U.S. military aid to Israel for its ongoing offensive against Hamas. Sawant did not seek re-election in 2023 as she established Workers Strike Back, an activist group focused on pro-labor causes and other issues.
-
-The Seattle resident vowed, if elected, to “flip the script on how to use elected office” as she did as a city leader from 2014 to 2024.  
-
-My socialist city council office went to war for working people to defeat the strenuous opposition from both big business and the Democratic Party,” she said in a statement. “Our experience in Seattle shows that we can defeat the rich and their political servants.
-
-Sawant filed as an independent with the Federal Election Commission.
+{candidate_context}
 
 Voter Name: {name}
 Voter ID: {voter_id}
@@ -64,50 +98,76 @@ Provide a helpful and engaging response that:
 3. Encourages continued civic participation
 4. Is respectful and non-partisan
 """
-        # Print the prompt sent to ChatGPT
-        print(f"\n{'='*60}\nPROMPT SENT TO AI:\n{'='*60}\n{prompt}\n{'='*60}\n")
 
-        
-        # Call OpenAI API
+        print("\n" + "=" * 60)
+        print("PROMPT SENT TO AI:")
+        print("=" * 60)
+        print(prompt)
+        print("=" * 60 + "\n")
+
+        # ----------------------------
+        # OpenAI API call
+        # ----------------------------
         response = client.chat.completions.create(
-            model="gpt-4o-mini",  # or "gpt-4" for better results
+            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
             messages=[
-                {"role": "system", "content": "You are a helpful civic engagement assistant. Provide clear, respectful, and non-partisan responses to voter comments and questions. Encourage democratic participation and provide factual information."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful civic engagement assistant. "
+                        "Provide clear, respectful, and non-partisan responses "
+                        "to voter comments and questions. Encourage democratic "
+                        "participation and provide factual information. "
+                        "Do not invent endorsements, promises, or campaign actions. "
+                        "Do not include a signature, closing line, or placeholder name."
+                    ),
+                },
+                {"role": "user", "content": prompt},
             ],
-            max_tokens=500,
-            temperature=0.7
+            max_tokens=int(os.getenv("OPENAI_MAX_TOKENS", "500")),
+            temperature=float(os.getenv("OPENAI_TEMPERATURE", "0.7")),
         )
-        
 
-        # Extract the response
-        ai_response = response.choices[0].message.content
+        ai_response = response.choices[0].message.content or ""
 
-        # Print the response from ChatGPT
-        print(f"\n{'='*60}\nAI RESPONSE:\n{'='*60}\n{ai_response}\n{'='*60}\n")
-        
-        return jsonify({
-            'success': True,
-            'response': ai_response,
-            'input': {
-                'name': name,
-                'voter_id': voter_id,
-                'comment': comment
+        print("\n" + "=" * 60)
+        print("AI RESPONSE:")
+        print("=" * 60)
+        print(ai_response)
+        print("=" * 60 + "\n")
+
+        return jsonify(
+            {
+                "success": True,
+                "response": ai_response,
+                "input": {
+                    "name": name,
+                    "voter_id": voter_id,
+                    "comment": comment,
+                },
+                "meta": {
+                    "candidate_key": candidate.key,
+                    "candidate_name": candidate.display_name,
+                    "mode": request.args.get("mode", ""),
+                },
             }
-        })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        )
 
-if __name__ == '__main__':
-    # Check if API key is set
-    if not os.getenv('OPENAI_API_KEY'):
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# --------------------------------------------------
+# Main
+# --------------------------------------------------
+if __name__ == "__main__":
+    if not os.getenv("OPENAI_API_KEY"):
         print("WARNING: OPENAI_API_KEY environment variable not set!")
-        print("Set it with: export OPENAI_API_KEY='your-api-key-here'")
     else:
         print("✓ OpenAI API key loaded successfully")
-    
-    # Run the development server
-    #app.run(debug=True, host='0.0.0.0', port=5000)
 
-    app.run(debug=False, host='0.0.0.0', port=int(os.getenv("PORT", "5000")))
+    app.run(
+        debug=False,
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", "5000")),
+    )
