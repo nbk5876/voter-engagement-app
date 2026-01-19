@@ -207,22 +207,34 @@
             max-width: 200px;
         }
         
+        .footer {
+            text-align: center;
+            padding: 15px 20px;
+            font-size: 0.8rem;
+            color: #999;
+        }
+
         /* Mobile optimization */
         @media (max-width: 480px) {
             body {
                 padding: 10px;
             }
-            
+
             .header h1 {
                 font-size: 1.5rem;
             }
-            
+
             .form-container {
                 padding: 20px 15px;
             }
-            
+
             .response-container {
                 padding: 20px 15px;
+            }
+
+            .footer {
+                font-size: 0.75rem;
+                padding: 12px 15px;
             }
         }
     </style>
@@ -288,6 +300,10 @@
                 <div class="response-title">Response</div>
                 <div id="responseContent" class="response-content">AI Output</div>
             </div>
+        </div>
+
+        <div class="footer">
+            v1.0.1 | January 2026
         </div>
     </div>
     
