@@ -158,6 +158,24 @@ Provide a helpful and engaging response that:
 
 
 # --------------------------------------------------
+# /docs/use-cases
+# --------------------------------------------------
+@app.route("/docs/use-cases", methods=["GET"])
+def docs_use_cases():
+    """Render the Use Cases document page."""
+    return render_template("voter_engage_use_cases_v1.html")
+
+
+# --------------------------------------------------
+# /docs/concepts
+# --------------------------------------------------
+@app.route("/docs/concepts", methods=["GET"])
+def docs_concepts():
+    """Render the Call 5 People Concepts document page."""
+    return render_template("voter_engage_concepts_v1.html")
+
+
+# --------------------------------------------------
 # Main
 # --------------------------------------------------
 if __name__ == "__main__":
