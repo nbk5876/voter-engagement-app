@@ -1,47 +1,82 @@
-# Voter Engagement Response App – Development Environment
+# Voter Engagement App
 
-A simple Python web application that collects voter questions or comments through an HTML form and uses the OpenAI API to generate draft responses. This application is intended to support civic engagement by helping candidates, volunteers, or organizers respond to voter input in a consistent and structured way.
+A Python web application that facilitates civic engagement by enabling voters to submit questions to candidates and receive AI-generated responses based on candidate-specific context. The app also supports the "Call 5 People" civic networking model for sustained engagement beyond election cycles.
 
-This repository is a development and prototyping environment.
+**Live Site:** [https://nbk5876.github.io/voter-engagement-app/](https://nbk5876.github.io/voter-engagement-app/)
+**App on Render:** [https://votereng.onrender.com](https://votereng.onrender.com)
 
 ## Features
 
-
-✅ Mobile-friendly responsive design  
-✅ Flask backend with Python  
-✅ OpenAI API integration  
-✅ Clean, modern UI  
-✅ Real-time form submission  
-✅ Error handling  
+- Voter question/comment submission form
+- AI-powered responses using OpenAI API
+- Multiple candidate personality support (via query parameters)
+- Mobile-friendly responsive design
+- DEV/TST mode for debugging
+- Documentation pages for Use Cases and Concepts
 
 ## Project Structure
 
 ```
-voter-app/
-├── votereng.py # Main Flask application
+voter-engagement-app/
+├── votereng.py              # Main Flask application
+├── personality.py           # Candidate personality configuration
+├── simple_server.py         # Simple server for testing
+├── requirements.txt         # Python dependencies
+├── .env.example             # Environment variable template
+├── index.html               # GitHub Pages landing page
+├── context/                 # Candidate context files
+│   ├── sawant.txt
+│   ├── chaudhry.txt
+│   └── turner.txt
 ├── templates/
-│ └── index.html # Voter response form
-├── requirements.txt # Python dependencies
-├── .env.example # Environment variable template
-└── README.md # This file
+│   ├── index.html                      # Main voter form
+│   ├── voter_engage_use_cases_v1.html  # Use cases documentation
+│   └── voter_engage_concepts_v1.html   # Concepts documentation
+├── docs/
+│   ├── Call 5 People - High Level Concept.pdf
+│   ├── Use Cases - Living Document.pdf
+│   ├── UC-CF-12-Candidate-Relationship.md
+│   └── Enhancement-Requests.md
+└── diagrams/
+    └── Voter Engagement Prototype Components v 1.x.png
 ```
+
+## Routes
+
+| Route | Description |
+|-------|-------------|
+| `/` | Main voter question form |
+| `/respond` | POST endpoint for AI response generation |
+| `/docs/use-cases` | Use Cases documentation page |
+| `/docs/concepts` | Call 5 People Concepts page |
+
+## Query Parameters
+
+| Parameter | Values | Description |
+|-----------|--------|-------------|
+| `ca` | `saw`, `cha`, `tur` | Select candidate personality |
+| `mode` | `dev`, `tst` | Enable debug information display |
+
+**Examples:**
+- `/?ca=saw` - Kshama Sawant personality
+- `/?ca=cha` - Chaudhry personality
+- `/?ca=tur` - Jack Turner (Fictional) personality
+- `/?mode=dev` - Show debug information
 
 ## Setup Instructions
 
 ### 1. Install Python Dependencies
 
-Make sure you have Python 3.8+ installed, then install the required packages:
+Requires Python 3.8+
 
 ```bash
-cd voter-app
 pip install -r requirements.txt
 ```
 
-Or if you prefer using a virtual environment (recommended):
+Or using a virtual environment (recommended):
 
 ```bash
-cd tax-app
-python3 -m venv venv
+python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
@@ -49,22 +84,16 @@ pip install -r requirements.txt
 ### 2. Set Up OpenAI API Key
 
 1. Get your API key from https://platform.openai.com/api-keys
-2. Create a `.env` file in the project root:
+2. Create a `.env` file:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Edit `.env` and add your actual API key:
+3. Edit `.env` and add your API key:
 
 ```
 OPENAI_API_KEY=sk-your-actual-api-key-here
-```
-
-**Alternative:** Set the environment variable directly:
-
-```bash
-export OPENAI_API_KEY='sk-your-actual-api-key-here'
 ```
 
 ### 3. Run the Application
@@ -73,139 +102,65 @@ export OPENAI_API_KEY='sk-your-actual-api-key-here'
 python votereng.py
 ```
 
-The server will start at `http://localhost:5000`
+The server starts at `http://localhost:5000`
 
-### 4. Access the Application
+## Environment Variables
 
-Open your browser and go to:
-- **Local:** http://localhost:5000
-- **Network access:** http://your-local-ip:5000 (for testing on mobile devices on the same network)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OPENAI_API_KEY` | (required) | OpenAI API key |
+| `OPENAI_MODEL` | `gpt-4o-mini` | Model to use for responses |
+| `OPENAI_MAX_TOKENS` | `500` | Maximum response tokens |
+| `OPENAI_TEMPERATURE` | `0.7` | Response creativity (0-1) |
+| `PORT` | `5000` | Server port |
 
 ## How It Works
 
-1. **User fills out the form** with income and deductions
-2. **Form data is submitted** to the Flask backend via AJAX
-3. **Flask processes the data** and sends it to OpenAI API
-4. **OpenAI analyzes the tax information** and returns insights
-5. **Results are displayed** at the bottom of the same page
+1. A voter fills out the form with their name, voter ID, and question/comment
+2. Form data is submitted to the Flask backend via POST
+3. Flask loads the appropriate candidate context from `./context/`
+4. OpenAI generates a response based on the candidate's positions and tone
+5. The response is displayed on the page
 
-How It Works
+## Call 5 People Model
 
-1. **A voter fills out the form with their name, identifier, and question or comment
-2. **Form data is submitted to the Flask backend via POST
-3. **Flask constructs a prompt using the voter input
-4. **OpenAI generates a draft response
-5. **The response is displayed on the same page for review
+The app supports a civic networking model where:
+- Voters organize into small, trust-based Civic Groups
+- Each member can invite up to 5 people
+- Members can only join one group but can lead another
+- Groups persist post-election for ongoing accountability
 
+See `/docs/concepts` for full documentation.
 
-## API Usage
+## Documentation
 
-The app uses OpenAI's Chat Completions API:
-- Model: `gpt-4o-mini` (cost-effective) or `gpt-4` (better quality)
-- Max tokens: 500
-- Temperature: 0.7
+- [Use Cases](/docs/use-cases) - Core use cases for the app
+- [Concepts](/docs/concepts) - Call 5 People high-level concept
+- [Enhancement Requests](docs/Enhancement-Requests.md) - Tracked enhancements
+- [UC-CF-12](docs/UC-CF-12-Candidate-Relationship.md) - Candidate relationship use case
 
-## Mobile Optimization
+## Deployment
 
-The interface is fully responsive and mobile-friendly:
-- Viewport meta tag for proper scaling
-- Touch-friendly input fields
-- Responsive grid layout
-- Works well on screens from 320px to 4K
+The app is configured for deployment on Render with `gunicorn`:
 
-## Customization Ideas
-
-### Add More Fields
-
-Edit `templates/index.html` to add more form fields:
-```html
-<div class="form-group">
-    <label for="state">State</label>
-    <select id="state" name="state">
-        <option value="CA">California</option>
-        <!-- Add more states -->
-    </select>
-</div>
-```
-
-Then update `app.py` to handle the new field:
-```python
-state = request.form.get('state', '')
-```
-
-### Change the AI Model
-
-In `app.py`, modify the model parameter:
-```python
-response = client.chat.completions.create(
-    model="gpt-4",  # Use GPT-4 for better results
-    # ... rest of the code
-)
-```
-
-### Adjust the Prompt
-
-Modify the prompt in `app.py` to change how the AI analyzes the data:
-```python
-prompt = f"""Your custom prompt here...
-
-Income: ${income}
-Deductions: ${deductions}
-"""
+```bash
+gunicorn votereng:app
 ```
 
 ## Security Notes
 
-⚠️ **Important for Production:**
-
-1. Never commit `.env` file to version control
-2. Use HTTPS in production
-3. Implement rate limiting
-4. Add input validation and sanitization
-5. Consider user authentication
-6. Monitor API usage and costs
-7. Add CORS headers if needed for cross-origin requests
-
-## Troubleshooting
-
-### "OPENAI_API_KEY not set" error
-Make sure you've created a `.env` file with your API key or set the environment variable.
-
-### Port already in use
-Change the port in `app.py`:
-```python
-app.run(debug=True, host='0.0.0.0', port=8080)
-```
-
-### Network access not working
-Make sure your firewall allows connections on port 5000, or use `0.0.0.0` as the host.
-
-## Testing on Mobile Devices
-
-To test on your phone/tablet:
-
-1. Make sure your computer and phone are on the same WiFi network
-2. Find your computer's local IP address:
-   - **Mac/Linux:** `ifconfig | grep inet`
-   - **Windows:** `ipconfig`
-3. On your phone, navigate to: `http://YOUR-IP:5000`
-
-## Next Steps
-
-- Add database storage for tax calculations
-- Implement user accounts and history
-- Add PDF export functionality
-- Create multiple calculation pages
-- Add data visualization charts
-- Deploy to a web server (Heroku, AWS, etc.)
+- Never commit `.env` file to version control
+- Use HTTPS in production
+- Implement rate limiting for production use
+- Add input validation and sanitization
+- Consider user authentication for sensitive features
 
 ## License
 
-This is a development/testing environment. Modify as needed for your use case.
+This is a development/prototyping environment for civic engagement tools.
 
 ## Support
 
-For questions about:
 - **Flask:** https://flask.palletsprojects.com/
 - **OpenAI API:** https://platform.openai.com/docs
-- **Python:** https://docs.python.org/
+- **GitHub Issues:** https://github.com/nbk5876/voter-engagement-app/issues
