@@ -3,7 +3,7 @@
 A Python web application that facilitates civic engagement by enabling voters to submit questions to candidates and receive AI-generated responses based on candidate-specific context. The app also supports the "Call 5 People" civic networking model for sustained engagement beyond election cycles.
 
 **Live Site:** [https://nbk5876.github.io/voter-engagement-app/](https://nbk5876.github.io/voter-engagement-app/)
-**App on Render:** [https://votereng.onrender.com](https://votereng.onrender.com)
+**App on Render:** [https://voter-engagement-app.onrender.com](https://voter-engagement-app.onrender.com)
 
 ## Features
 
