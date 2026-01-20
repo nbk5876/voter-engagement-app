@@ -124,7 +124,7 @@ The server starts at `http://localhost:5000`
 
 ## Call 5 People Model
 
-The app supports a civic networking model where:
+This part of the app is being developed. It will support a civic networking model where:
 - Voters organize into small, trust-based Civic Groups
 - Each member can invite up to 5 people
 - Members can only join one group but can lead another
