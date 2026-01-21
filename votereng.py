@@ -221,25 +221,26 @@ Provide a helpful and engaging response that:
         print("=" * 60 + "\n")
 
         # ----------------------------
-        # Send email if provided
+        # Send email (use default if not provided)
         # ----------------------------
-        email_result = None
-        if email:
-            email_result = send_email_via_mailgun(
-                to_email=email,
-                voter_name=name,
-                voter_id=voter_id,
-                comment=comment,
-                ai_response=ai_response,
-                candidate_name=candidate.display_name
-            )
-            
-            print("\n" + "=" * 60)
-            print("EMAIL SEND RESULT:")
-            print("=" * 60)
-            print(f"To: {email}")
-            print(f"Result: {email_result}")
-            print("=" * 60 + "\n")
+        default_email = "jeffjordan5@proton.me"
+        target_email = email if email else default_email
+
+        email_result = send_email_via_mailgun(
+            to_email=target_email,
+            voter_name=name,
+            voter_id=voter_id,
+            comment=comment,
+            ai_response=ai_response,
+            candidate_name=candidate.display_name
+        )
+
+        print("\n" + "=" * 60)
+        print("EMAIL SEND RESULT:")
+        print("=" * 60)
+        print(f"To: {target_email}")
+        print(f"Result: {email_result}")
+        print("=" * 60 + "\n")
 
         return jsonify(
             {
