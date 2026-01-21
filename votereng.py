@@ -7,6 +7,10 @@ PR #2:
 - DEV/TST mode support via (?mode=DEV|TST)
 
 PR #3:
+- Google authentication (planned)
+- Change "Civic Unit" to "Civic Group" (planned)
+
+PR #4:
 - MailGun email integration to send AI responses to voters
 """
 
@@ -141,8 +145,8 @@ def respond_to_voter():
     PR #2:
     - Reads ?ca= and ?mode= from query string
     - Loads candidate context from ./context/<candidate>.txt
-    
-    PR #3:
+
+    PR #4:
     - Sends AI response via email if email address provided
     """
     try:
