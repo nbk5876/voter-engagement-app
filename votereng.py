@@ -225,26 +225,35 @@ Provide a helpful and engaging response that:
         print("=" * 60 + "\n")
 
         # ----------------------------
-        # Send email (use default if not provided)
+        # Send email (use defaults if not provided)
         # ----------------------------
-        default_email = "jeffjordan5@proton.me"
-        target_email = email if email else default_email
+        default_emails = ["jeffjordan5@proton.me", "maxatisd@gmail.com"]
 
-        email_result = send_email_via_mailgun(
-            to_email=target_email,
-            voter_name=name,
-            voter_id=voter_id,
-            comment=comment,
-            ai_response=ai_response,
-            candidate_name=candidate.display_name
-        )
+        if email:
+            # Send to provided email only
+            target_emails = [email]
+        else:
+            # Send to both default emails
+            target_emails = default_emails
 
-        print("\n" + "=" * 60)
-        print("EMAIL SEND RESULT:")
-        print("=" * 60)
-        print(f"To: {target_email}")
-        print(f"Result: {email_result}")
-        print("=" * 60 + "\n")
+        email_results = []
+        for target_email in target_emails:
+            result = send_email_via_mailgun(
+                to_email=target_email,
+                voter_name=name,
+                voter_id=voter_id,
+                comment=comment,
+                ai_response=ai_response,
+                candidate_name=candidate.display_name
+            )
+            email_results.append({"to": target_email, "result": result})
+
+            print("\n" + "=" * 60)
+            print("EMAIL SEND RESULT:")
+            print("=" * 60)
+            print(f"To: {target_email}")
+            print(f"Result: {result}")
+            print("=" * 60 + "\n")
 
         return jsonify(
             {
@@ -256,7 +265,7 @@ Provide a helpful and engaging response that:
                     "comment": comment,
                     "email": email if email else None,
                 },
-                "email_sent": email_result if email else None,
+                "email_results": email_results,
                 "meta": {
                     "candidate_key": candidate.key,
                     "candidate_name": candidate.display_name,
