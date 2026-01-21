@@ -5,10 +5,14 @@ Simple Flask application for voter engagement response using OpenAI API
 PR #2:
 - Candidate personality selection via query parameter (?ca=)
 - DEV/TST mode support via (?mode=DEV|TST)
+
+PR #3:
+- MailGun email integration to send AI responses to voters
 """
 
 from flask import Flask, render_template, request, jsonify
 import os
+import requests  # Added for MailGun API
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -25,6 +29,82 @@ app = Flask(__name__)
 
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+
+# --------------------------------------------------
+# MailGun Email Function
+# --------------------------------------------------
+def send_email_via_mailgun(to_email, voter_name, voter_id, comment, ai_response, candidate_name):
+    """
+    Send AI response to voter via MailGun.
+    
+    Args:
+        to_email: Recipient email address
+        voter_name: Name of the voter
+        voter_id: Voter ID
+        comment: Original comment from voter
+        ai_response: The AI-generated response text
+        candidate_name: Name of the candidate personality
+    
+    Returns:
+        dict: Response from MailGun API or error details
+    """
+    try:
+        mailgun_api_key = os.getenv("MAILGUN_API_KEY")
+        mailgun_domain = os.getenv("MAILGUN_DOMAIN")
+        mailgun_base_url = os.getenv("MAILGUN_BASE_URL", "https://api.mailgun.net")
+        
+        if not mailgun_api_key or not mailgun_domain:
+            return {"success": False, "error": "MailGun credentials not configured"}
+        
+        # Build email body with voter information and response
+        email_body = f"""Hi {voter_name},
+
+Thank you for your comment. Here's a summary of your inquiry and our response:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+YOUR INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Name: {voter_name}
+Voter ID: {voter_id}
+
+Your Comment:
+{comment}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RESPONSE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{ai_response}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This is an automated response from the Voter Engagement platform.
+"""
+        
+        response = requests.post(
+            f"{mailgun_base_url}/v3/{mailgun_domain}/messages",
+            auth=("api", mailgun_api_key),
+            data={
+                "from": f"Voter Engagement <noreply@{mailgun_domain}>",
+                "to": to_email,
+                "subject": f"Response from {candidate_name}",
+                "text": email_body,
+            }
+        )
+        
+        if response.status_code == 200:
+            return {"success": True, "message_id": response.json().get("id")}
+        else:
+            return {
+                "success": False, 
+                "error": f"MailGun error: {response.status_code}",
+                "details": response.text
+            }
+            
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 # --------------------------------------------------
@@ -61,6 +141,9 @@ def respond_to_voter():
     PR #2:
     - Reads ?ca= and ?mode= from query string
     - Loads candidate context from ./context/<candidate>.txt
+    
+    PR #3:
+    - Sends AI response via email if email address provided
     """
     try:
         # ----------------------------
@@ -69,6 +152,7 @@ def respond_to_voter():
         name = request.form.get("name", "").strip()
         voter_id = request.form.get("voter_id", "").strip()
         comment = request.form.get("comment", "").strip()
+        email = request.form.get("email", "").strip()  # New: email field
 
         if not name or not voter_id or not comment:
             return jsonify(
@@ -136,6 +220,27 @@ Provide a helpful and engaging response that:
         print(ai_response)
         print("=" * 60 + "\n")
 
+        # ----------------------------
+        # Send email if provided
+        # ----------------------------
+        email_result = None
+        if email:
+            email_result = send_email_via_mailgun(
+                to_email=email,
+                voter_name=name,
+                voter_id=voter_id,
+                comment=comment,
+                ai_response=ai_response,
+                candidate_name=candidate.display_name
+            )
+            
+            print("\n" + "=" * 60)
+            print("EMAIL SEND RESULT:")
+            print("=" * 60)
+            print(f"To: {email}")
+            print(f"Result: {email_result}")
+            print("=" * 60 + "\n")
+
         return jsonify(
             {
                 "success": True,
@@ -144,7 +249,9 @@ Provide a helpful and engaging response that:
                     "name": name,
                     "voter_id": voter_id,
                     "comment": comment,
+                    "email": email if email else None,
                 },
+                "email_sent": email_result if email else None,
                 "meta": {
                     "candidate_key": candidate.key,
                     "candidate_name": candidate.display_name,
@@ -183,6 +290,11 @@ if __name__ == "__main__":
         print("WARNING: OPENAI_API_KEY environment variable not set!")
     else:
         print("✓ OpenAI API key loaded successfully")
+    
+    if not os.getenv("MAILGUN_API_KEY") or not os.getenv("MAILGUN_DOMAIN"):
+        print("WARNING: MailGun credentials not set. Email sending will be disabled.")
+    else:
+        print("✓ MailGun credentials loaded successfully")
 
     app.run(
         debug=False,
