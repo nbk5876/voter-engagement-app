@@ -227,7 +227,7 @@ Provide a helpful and engaging response that:
         # ----------------------------
         # Send email (use defaults if not provided)
         # ----------------------------
-        default_emails = ["jeffjordan5@proton.me", "maxatisd@gmail.com"]
+        default_emails = ["jeffjordan5@proton.me", "VoterEngageBox1@proton.me"]
 
         if email:
             # Send to provided email only
