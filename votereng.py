@@ -66,9 +66,9 @@ def send_email_via_mailgun(to_email, voter_name, voter_id, comment, ai_response,
 
 Thank you for your comment. Here's a summary of your inquiry and our response:
 
-━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━
 YOUR INFORMATION
-━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━
 
 Name: {voter_name}
 Voter ID: {voter_id}
@@ -76,13 +76,13 @@ Voter ID: {voter_id}
 Your Comment:
 {comment}
 
-━━━━━━━━━━━━━━━━━━━━
-RESPONSE
-━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━
+AI RESPONSE
+━━━━━━━━━━━━━━━
 
 {ai_response}
 
-━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━
 
 This is an automated response from the Voter Engagement platform.
 """
