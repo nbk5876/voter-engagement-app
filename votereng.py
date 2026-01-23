@@ -16,7 +16,9 @@ PR #4:
 
 from flask import Flask, render_template, request, jsonify
 import os
+import socket
 import requests  # Added for MailGun API
+from datetime import datetime, timezone
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -294,6 +296,58 @@ def docs_use_cases():
 def docs_concepts():
     """Render the Call 5 People Concepts document page."""
     return render_template("voter_engage_concepts_v1.html")
+
+
+# --------------------------------------------------
+# Startup Notification
+# --------------------------------------------------
+def send_startup_notification():
+    """Send an email notification when the server starts."""
+    mailgun_api_key = os.getenv("MAILGUN_API_KEY")
+    mailgun_domain = os.getenv("MAILGUN_DOMAIN")
+    mailgun_base_url = os.getenv("MAILGUN_BASE_URL", "https://api.mailgun.net")
+
+    if not mailgun_api_key or not mailgun_domain:
+        print("Startup notification skipped: MailGun credentials not configured.")
+        return
+
+    environment = "Render" if os.getenv("RENDER") else "Local PC"
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    hostname = socket.gethostname()
+    try:
+        ip_address = socket.gethostbyname(hostname)
+    except socket.gaierror:
+        ip_address = "unknown"
+
+    subject = f"Voter Engagement Server Started — {environment}"
+    body = (
+        f"The Voter Engagement server has started.\n\n"
+        f"Environment: {environment}\n"
+        f"Host: {hostname}\n"
+        f"IP Address: {ip_address}\n"
+        f"Timestamp: {timestamp}\n"
+    )
+
+    recipients = ["jeffjordan5@proton.me", "VoterEngageBox1@proton.me"]
+    for to_email in recipients:
+        try:
+            response = requests.post(
+                f"{mailgun_base_url}/v3/{mailgun_domain}/messages",
+                auth=("api", mailgun_api_key),
+                data={
+                    "from": f"Voter Engagement <noreply@{mailgun_domain}>",
+                    "to": to_email,
+                    "subject": subject,
+                    "text": body,
+                },
+            )
+            print(f"Startup notification to {to_email}: {response.status_code}")
+        except Exception as e:
+            print(f"Startup notification to {to_email} failed: {e}")
+
+
+send_startup_notification()
 
 
 # --------------------------------------------------
