@@ -1,6 +1,8 @@
 # Voter Engagement App - Project Context
 
 ## Architecture
+![Service Stack](diagrams/Voter%20Engagement%20Prototype%20Service%20Stack.png)
+
 - **Backend**: Python Flask app (`votereng.py`)
 - **Frontend**: `templates/index.html` (single-page form)
 - **AI**: OpenAI ChatGPT GPT-4o-mini for generating responses
