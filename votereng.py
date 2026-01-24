@@ -320,6 +320,21 @@ def send_startup_notification():
     except socket.gaierror:
         ip_address = "unknown"
 
+    # On Render, fetch the commit message from GitHub
+    commit_info = ""
+    commit_sha = os.getenv("RENDER_GIT_COMMIT")
+    if commit_sha:
+        try:
+            gh_resp = requests.get(
+                f"https://api.github.com/repos/nbk5876/voter-engagement-app/commits/{commit_sha}",
+                timeout=5,
+            )
+            if gh_resp.status_code == 200:
+                message = gh_resp.json().get("commit", {}).get("message", "")
+                commit_info = f"Commit: {commit_sha[:7]}\nMessage: {message}\n"
+        except Exception:
+            commit_info = f"Commit: {commit_sha[:7]}\n"
+
     subject = f"Voter Engagement Server Started — {environment}"
     body = (
         f"The Voter Engagement server has started.\n\n"
@@ -327,6 +342,7 @@ def send_startup_notification():
         f"Host: {hostname}\n"
         f"IP Address: {ip_address}\n"
         f"Timestamp: {timestamp}\n"
+        f"{commit_info}"
     )
 
     recipients = ["jeffjordan5@proton.me", "VoterEngageBox1@proton.me"]
