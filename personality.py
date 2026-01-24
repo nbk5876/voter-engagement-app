@@ -40,6 +40,12 @@ CANDIDATES: Dict[str, CandidatePersonality] = {
         context_file="turner.txt",
     ),
 
+    "mod": CandidatePersonality(
+        key="mod",
+        display_name="Karen Morales (Fictional)",
+        context_file="moddem.txt",
+    ),
+
 }
 
 DEFAULT_CANDIDATE_KEY = "saw"
