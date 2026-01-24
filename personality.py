@@ -48,7 +48,7 @@ CANDIDATES: Dict[str, CandidatePersonality] = {
 
 }
 
-DEFAULT_CANDIDATE_KEY = "saw"
+DEFAULT_CANDIDATE_KEY = "mod"
 VALID_MODES = {"dev", "tst"}
 
 
