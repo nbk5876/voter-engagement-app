@@ -15,6 +15,7 @@ PR #4:
 """
 
 from flask import Flask, render_template, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
 import os
 import socket
 import requests  # Added for MailGun API
@@ -32,6 +33,34 @@ from personality import (
 load_dotenv()
 
 app = Flask(__name__)
+
+# Database configuration
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
+
+
+# --------------------------------------------------
+# Database Model
+# --------------------------------------------------
+class VoterSubmission(db.Model):
+    """Stores voter submissions and AI responses."""
+    __tablename__ = "voter_submissions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    voter_id = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(200), nullable=True)
+    comment = db.Column(db.Text, nullable=False)
+    ai_response = db.Column(db.Text, nullable=True)
+    candidate_key = db.Column(db.String(50), nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+# Create tables if they don't exist
+with app.app_context():
+    db.create_all()
+
 
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -225,6 +254,21 @@ Provide a helpful and engaging response that:
         print("=" * 60)
         print(ai_response)
         print("=" * 60 + "\n")
+
+        # ----------------------------
+        # Save to database
+        # ----------------------------
+        submission = VoterSubmission(
+            name=name,
+            voter_id=voter_id,
+            email=email if email else None,
+            comment=comment,
+            ai_response=ai_response,
+            candidate_key=candidate.key,
+        )
+        db.session.add(submission)
+        db.session.commit()
+        print(f"Saved submission to database (id={submission.id})")
 
         # ----------------------------
         # Send email (use defaults if not provided)
