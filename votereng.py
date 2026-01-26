@@ -14,8 +14,9 @@ PR #4:
 - MailGun email integration to send AI responses to voters
 """
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+from flask_dance.contrib.google import make_google_blueprint, google
 import os
 import socket
 import requests  # Added for MailGun API
@@ -34,6 +35,18 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# Secret key for sessions (required for OAuth)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24))
+
+# Google OAuth configuration
+google_bp = make_google_blueprint(
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"],
+    redirect_to="google_authorized",
+)
+app.register_blueprint(google_bp, url_prefix="/login")
+
 # Database configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -49,7 +62,7 @@ class VoterSubmission(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
-    voter_id = db.Column(db.String(100), nullable=False)
+    voter_id = db.Column(db.String(200), nullable=True)  # Email for logged-in, NULL for anonymous
     email = db.Column(db.String(200), nullable=True)
     comment = db.Column(db.Text, nullable=False)
     ai_response = db.Column(db.Text, nullable=True)
@@ -143,6 +156,35 @@ This is an automated response from the Voter Engagement platform.
 
 
 # --------------------------------------------------
+# Google OAuth Callback
+# --------------------------------------------------
+@app.route("/google_authorized")
+def google_authorized():
+    """Handle Google OAuth callback and store user email in session."""
+    if not google.authorized:
+        return redirect(url_for("google.login"))
+
+    resp = google.get("/oauth2/v2/userinfo")
+    if resp.ok:
+        user_info = resp.json()
+        session["user_email"] = user_info.get("email")
+        session["user_name"] = user_info.get("name")
+        print(f"User logged in: {session['user_email']}")
+
+    return redirect(url_for("index"))
+
+
+# --------------------------------------------------
+# /logout
+# --------------------------------------------------
+@app.route("/logout")
+def logout():
+    """Clear session and log user out."""
+    session.clear()
+    return redirect(url_for("index"))
+
+
+# --------------------------------------------------
 # /
 # --------------------------------------------------
 @app.route("/", methods=["GET"])
@@ -157,11 +199,17 @@ def index():
     candidate = get_candidate(request.args)
     show_debug = should_show_debug(request.args)
 
+    # Get user info from session if logged in
+    user_email = session.get("user_email")
+    user_name = session.get("user_name")
+
     return render_template(
         "index.html",
         show_debug=show_debug,
         candidate_key=candidate.key,
         candidate_name=candidate.display_name,
+        user_email=user_email,
+        user_name=user_name,
     )
 
 
@@ -182,16 +230,30 @@ def respond_to_voter():
     """
     try:
         # ----------------------------
-        # Read form inputs
+        # Read form inputs and session
         # ----------------------------
-        name = request.form.get("name", "").strip()
-        voter_id = request.form.get("voter_id", "").strip()
         comment = request.form.get("comment", "").strip()
-        email = request.form.get("email", "").strip()  # New: email field
 
-        if not name or not voter_id or not comment:
+        # Get user info from session (if logged in via Google)
+        user_email = session.get("user_email")
+        user_name = session.get("user_name")
+
+        # If logged in, use Google profile; otherwise use form fields
+        if user_email:
+            name = user_name or user_email
+            voter_id = user_email  # Use email as voter_id for logged-in users
+        else:
+            name = request.form.get("name", "").strip()
+            voter_id = None  # Anonymous users have no voter_id
+
+        if not comment:
             return jsonify(
-                {"error": "Please provide name, voter ID, and comment"}
+                {"error": "Please provide a comment"}
+            ), 400
+
+        if not user_email and not name:
+            return jsonify(
+                {"error": "Please provide your name"}
             ), 400
 
         # ----------------------------
@@ -260,8 +322,8 @@ Provide a helpful and engaging response that:
         # ----------------------------
         submission = VoterSubmission(
             name=name,
-            voter_id=voter_id,
-            email=email if email else None,
+            voter_id=voter_id,  # user_email if logged in, None if anonymous
+            email=user_email,  # Only set if logged in
             comment=comment,
             ai_response=ai_response,
             candidate_key=candidate.key,
@@ -271,33 +333,46 @@ Provide a helpful and engaging response that:
         print(f"Saved submission to database (id={submission.id})")
 
         # ----------------------------
-        # Send email (use defaults if not provided)
+        # Send email notifications
         # ----------------------------
-        default_emails = ["jeffjordan5@proton.me", "VoterEngageBox1@proton.me"]
-
-        if email:
-            # Send to provided email only
-            target_emails = [email]
-        else:
-            # Send to both default emails
-            target_emails = default_emails
-
         email_results = []
-        for target_email in target_emails:
+        admin_emails = ["jeffjordan5@proton.me", "VoterEngageBox1@proton.me"]
+
+        # 1. ALWAYS send to admin emails (every submission)
+        for admin_email in admin_emails:
             result = send_email_via_mailgun(
-                to_email=target_email,
+                to_email=admin_email,
+                voter_name=name,
+                voter_id=voter_id or "anonymous",
+                comment=comment,
+                ai_response=ai_response,
+                candidate_name=candidate.display_name
+            )
+            email_results.append({"to": admin_email, "result": result, "type": "admin"})
+
+            print("\n" + "=" * 60)
+            print("ADMIN EMAIL SEND RESULT:")
+            print("=" * 60)
+            print(f"To: {admin_email}")
+            print(f"Result: {result}")
+            print("=" * 60 + "\n")
+
+        # 2. ADDITIONALLY send to user if logged in
+        if user_email:
+            result = send_email_via_mailgun(
+                to_email=user_email,
                 voter_name=name,
                 voter_id=voter_id,
                 comment=comment,
                 ai_response=ai_response,
                 candidate_name=candidate.display_name
             )
-            email_results.append({"to": target_email, "result": result})
+            email_results.append({"to": user_email, "result": result, "type": "user"})
 
             print("\n" + "=" * 60)
-            print("EMAIL SEND RESULT:")
+            print("USER EMAIL SEND RESULT:")
             print("=" * 60)
-            print(f"To: {target_email}")
+            print(f"To: {user_email}")
             print(f"Result: {result}")
             print("=" * 60 + "\n")
 
@@ -309,7 +384,7 @@ Provide a helpful and engaging response that:
                     "name": name,
                     "voter_id": voter_id,
                     "comment": comment,
-                    "email": email if email else None,
+                    "logged_in": user_email is not None,
                 },
                 "email_results": email_results,
                 "meta": {
