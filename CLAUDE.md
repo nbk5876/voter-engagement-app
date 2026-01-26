@@ -8,6 +8,7 @@
 - **Backend**: Python Flask app (`votereng.py`)
 - **Frontend**: `templates/index.html` (single-page form)
 - **AI**: OpenAI ChatGPT GPT-4o-mini for generating responses
+- **Auth**: Google OAuth via Flask-Dance (progressive authentication)
 - **Email**: MailGun for sending email responses to voters
 - **Database**: PostgreSQL (local: `votereng_dev`, Render: `votereng_db`)
 - **Hosting**: Render (https://voter-engagement-app.onrender.com/)
@@ -19,11 +20,19 @@
 - Python version pinned to 3.12 (`.python-version`) for psycopg2-binary compatibility
 - Startup notification email sent on each deploy (includes commit message on Render)
 
+## Authentication
+- **Google OAuth** via Flask-Dance (UC-CF-11)
+- Progressive authentication: anonymous users can submit, logged-in users get email responses
+- Session stores `user_email` and `user_name` from Google profile
+- `voter_id` in database: Google email if logged in, NULL if anonymous
+- Admin emails always sent; user email only if authenticated
+
 ## Database
 - **Local**: PostgreSQL on Windows, database `votereng_dev`
 - **Render**: Managed PostgreSQL, database `votereng_db`
 - **Tables**: `voter_submissions` (id, name, voter_id, email, comment, ai_response, candidate_key, created_at)
 - **ORM**: Flask-SQLAlchemy
+- `voter_id` column is nullable (supports anonymous submissions)
 
 ## Candidate Personalities
 Selectable via `?ca=` query parameter:
@@ -45,13 +54,15 @@ Context files in `context/` folder.
 - Sections: YOUR INFORMATION, AI RESPONSE
 - Sent via MailGun REST API
 
-## Roadmap (v1.2 complete)
+## Roadmap (v1.2 complete, OAuth deployed)
 - **v1.0** ✓ — Basic voter question submission
 - **v1.1** ✓ — GitHub deploy, candidate personalities, MailGun email
 - **v1.2** ✓ — PostgreSQL database (local + Render), startup notifications
+- **v1.2.1** ✓ — Google OAuth authentication (UC-CF-11)
 - **v1.3** — Use Cases, Full DB Design
 - **v1.4** — Expand schema for ENH-001 through ENH-005
 
 ## Next Up
-- **Google OAuth** (UC-CF-11) — Required for email field and Civic Group features
+- Full DB design based on Use Cases document
+- Civic Group features (UC-CF-1 through UC-CF-10)
 - See `docs/Enhancement-Requests.md` for future enhancements
