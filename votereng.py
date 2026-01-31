@@ -32,6 +32,7 @@ from personality import (
 
 # Load environment variables
 load_dotenv()
+print(f"DEBUG: MAILGUN_DOMAIN = {os.getenv('MAILGUN_DOMAIN')}")
 
 app = Flask(__name__)
 
@@ -135,7 +136,7 @@ This is an automated response from the Voter Engagement platform.
             f"{mailgun_base_url}/v3/{mailgun_domain}/messages",
             auth=("api", mailgun_api_key),
             data={
-                "from": f"Voter Engagement <noreply@{mailgun_domain}>",
+                "from": f"Call5 <noreply@{mailgun_domain}>",
                 "to": to_email,
                 "subject": f"Response from {candidate_name}",
                 "text": email_body,
@@ -471,7 +472,7 @@ def send_startup_notification():
                 f"{mailgun_base_url}/v3/{mailgun_domain}/messages",
                 auth=("api", mailgun_api_key),
                 data={
-                    "from": f"Voter Engagement <noreply@{mailgun_domain}>",
+                    "from": f"Call5 <noreply@{mailgun_domain}>",
                     "to": to_email,
                     "subject": subject,
                     "text": body,
