@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voter Engagement - Call 5 People Concepts</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <iframe id="docFrame"
+        src="https://docs.google.com/document/d/1FabICCs2gv4HsF36Ts060ZuaOi5UeY52EcsyYNe3nY8/edit?usp=sharing"
+        allowfullscreen>
+    </iframe>
+    
+    <script>
+        // Auto-focus iframe on page load to reduce click requirement
+        window.addEventListener('load', () => {
+            const iframe = document.getElementById('docFrame');
+            iframe.focus();
+            // Try to focus the iframe's content window
+            try {
+                iframe.contentWindow.focus();
+            } catch(e) {
+                // Cross-origin security may block this, but worth trying
+            }
+        });
+    </script>
+</body>
+</html>
