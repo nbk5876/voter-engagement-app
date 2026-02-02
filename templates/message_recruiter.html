@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Call5 Democracy</title>
+    <title>Message Your Recruiter - Call5 Democracy</title>
     <style>
         * {
             margin: 0;
@@ -75,52 +75,45 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
-        .dashboard-content {
+        .message-content {
             padding: 30px 20px;
         }
 
-        .welcome {
-            margin-bottom: 25px;
-        }
-
-        .welcome h2 {
+        .message-content h2 {
             font-size: 1.4rem;
             color: #333;
             margin-bottom: 6px;
         }
 
-        .welcome .recruiter {
+        .message-content .subtitle {
             font-size: 0.95rem;
             color: #666;
+            margin-bottom: 25px;
         }
 
-        .stats-card {
-            background: #f8f9fa;
-            border: 2px solid #e0e0e0;
+        .confirmation-banner {
+            background: #d4edda;
+            border: 2px solid #28a745;
             border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 25px;
-            text-align: center;
-        }
-
-        .stats-card .count {
-            font-size: 2.4rem;
-            font-weight: 700;
-            color: #2c5aa0;
-            line-height: 1.2;
-        }
-
-        .stats-card .label {
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            color: #155724;
             font-size: 0.95rem;
-            color: #666;
-            margin-top: 4px;
+            font-weight: 600;
         }
 
-        .invite-section {
-            margin-bottom: 25px;
+        .error-banner {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            color: #721c24;
+            font-size: 0.95rem;
+            font-weight: 600;
         }
 
-        .invite-section label {
+        .message-form label {
             display: block;
             margin-bottom: 8px;
             color: #333;
@@ -128,50 +121,50 @@
             font-size: 1rem;
         }
 
-        .invite-row {
-            display: flex;
-            gap: 10px;
-        }
-
-        .invite-row input {
-            flex: 1;
+        .message-form textarea {
+            width: 100%;
             padding: 12px 14px;
             border: 2px solid #ccc;
             border-radius: 4px;
             font-size: 0.95rem;
-            background: #f5f5f5;
+            font-family: inherit;
+            line-height: 1.5;
+            background: #fff;
             color: #333;
+            resize: vertical;
+            min-height: 150px;
+            margin-bottom: 16px;
         }
 
-        .copy-btn {
-            padding: 12px 20px;
+        .message-form textarea:focus {
+            outline: none;
+            border-color: #2c5aa0;
+        }
+
+        .send-btn {
+            width: 100%;
+            padding: 16px;
             background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
             color: white;
             border: none;
             border-radius: 4px;
-            font-size: 0.95rem;
+            font-size: 1.05rem;
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
-            white-space: nowrap;
         }
 
-        .copy-btn:hover {
+        .send-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(44, 90, 160, 0.4);
         }
 
-        .copy-btn:active {
+        .send-btn:active {
             transform: translateY(0);
         }
 
-        .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .action-btn {
+        .back-btn {
+            display: block;
             width: 100%;
             padding: 16px;
             border-radius: 4px;
@@ -180,37 +173,16 @@
             cursor: pointer;
             text-decoration: none;
             text-align: center;
-            display: block;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .action-btn.primary {
             background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
             color: white;
             border: none;
+            margin-top: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .action-btn.primary:hover {
+        .back-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(44, 90, 160, 0.4);
-        }
-
-        .action-btn.disabled {
-            background: #e0e0e0;
-            color: #999;
-            border: none;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        .action-btn.disabled.extra-faded {
-            opacity: 0.5;
-        }
-
-        .coming-soon {
-            font-size: 0.8rem;
-            font-weight: 400;
-            margin-left: 8px;
         }
 
         .footer {
@@ -229,12 +201,8 @@
                 font-size: 1.5rem;
             }
 
-            .dashboard-content {
+            .message-content {
                 padding: 20px 15px;
-            }
-
-            .invite-row {
-                flex-direction: column;
             }
 
             .footer {
@@ -257,69 +225,32 @@
             </div>
         </div>
 
-        <div class="dashboard-content">
-            <div class="welcome">
-                <h2>Welcome, {{ user_name }}!</h2>
-                {% if recruiter_name %}
-                <p class="recruiter">Recruited by: {{ recruiter_name }}</p>
-                {% endif %}
-            </div>
+        <div class="message-content">
+            <h2>Message Your Recruiter</h2>
+            <p class="subtitle">Send a message to {{ recruiter_name }}.</p>
 
-            <div class="stats-card">
-                <div class="count">{{ recruit_count }}</div>
-                <div class="label">People Recruited</div>
-            </div>
+            {% if confirmation %}
+            <div class="confirmation-banner">{{ confirmation }}</div>
+            {% endif %}
 
-            <div class="invite-section">
-                <label>Your Invite Link</label>
-                <div class="invite-row">
-                    <input type="text" id="inviteLink" value="{{ invite_link }}" readonly>
-                    <button class="copy-btn" id="copyBtn" onclick="copyInviteLink()">Copy</button>
-                </div>
-            </div>
+            {% if error %}
+            <div class="error-banner">{{ error }}</div>
+            {% endif %}
 
-            <div class="actions">
-                <a href="{{ url_for('share') }}" class="action-btn primary">
-                    Share Your Invite Link
-                </a>
-                {% if recruiter_name %}
-                <a href="{{ url_for('message_recruiter') }}" class="action-btn primary">
-                    Message Your Recruiter
-                </a>
-                {% else %}
-                <button class="action-btn disabled extra-faded">
-                    Message Your Recruiter<span class="coming-soon">(No Recruiter)</span>
-                </button>
-                {% endif %}
-                <a href="{{ url_for('index') }}" class="action-btn primary">
-                    Submit Voter Question
-                </a>
-            </div>
+            {% if not confirmation %}
+            <form class="message-form" method="POST" action="{{ url_for('message_recruiter') }}">
+                <label for="message">Your Message</label>
+                <textarea id="message" name="message" placeholder="Type your message here...">{{ message_text }}</textarea>
+                <button type="submit" class="send-btn">Send Message</button>
+            </form>
+            {% endif %}
+
+            <a href="{{ url_for('dashboard') }}" class="back-btn">Back to Dashboard</a>
         </div>
 
         <div class="footer">
             v0.3 | February 2026 | Call 5 Hub and Spoke
         </div>
     </div>
-
-    <script>
-        function copyInviteLink() {
-            const input = document.getElementById('inviteLink');
-            const btn = document.getElementById('copyBtn');
-            navigator.clipboard.writeText(input.value).then(function() {
-                btn.textContent = 'Copied!';
-                setTimeout(function() {
-                    btn.textContent = 'Copy';
-                }, 2000);
-            }, function() {
-                input.select();
-                document.execCommand('copy');
-                btn.textContent = 'Copied!';
-                setTimeout(function() {
-                    btn.textContent = 'Copy';
-                }, 2000);
-            });
-        }
-    </script>
 </body>
 </html>

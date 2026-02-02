@@ -181,6 +181,52 @@ This is an automated response from the Voter Engagement platform.
         return {"success": False, "error": str(e)}
 
 
+def send_recruiter_message(from_user_name, from_user_email, to_recruiter_email, message_text):
+    """Send a message from a member to their recruiter via MailGun."""
+    try:
+        mailgun_api_key = os.getenv("MAILGUN_API_KEY")
+        mailgun_domain = os.getenv("MAILGUN_DOMAIN")
+        mailgun_base_url = os.getenv("MAILGUN_BASE_URL", "https://api.mailgun.net")
+
+        if not mailgun_api_key or not mailgun_domain:
+            return {"success": False, "error": "MailGun credentials not configured"}
+
+        email_body = f"""You have a new message from {from_user_name}, a member of your Call5 Democracy network.
+
+━━━━━━━━━━━━━━━
+MESSAGE
+━━━━━━━━━━━━━━━
+
+{message_text}
+
+━━━━━━━━━━━━━━━
+
+To reply, respond to this email — it will go directly to {from_user_name} at {from_user_email}.
+
+This message was sent via Call5 Democracy.
+"""
+
+        response = requests.post(
+            f"{mailgun_base_url}/v3/{mailgun_domain}/messages",
+            auth=("api", mailgun_api_key),
+            data={
+                "from": f"Call5 <noreply@{mailgun_domain}>",
+                "to": to_recruiter_email,
+                "subject": f"Message from {from_user_name} on Call5 Democracy",
+                "text": email_body,
+                "h:Reply-To": from_user_email,
+            }
+        )
+
+        if response.status_code == 200:
+            return {"success": True, "message_id": response.json().get("id")}
+        else:
+            return {"success": False, "error": f"MailGun error: {response.status_code}", "details": response.text}
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 # --------------------------------------------------
 # Google OAuth Callback
 # --------------------------------------------------
@@ -338,6 +384,54 @@ def share():
     return render_template("share.html",
         user_name=user.name, user_email=user.email,
         invite_link=invite_link)
+
+
+# --------------------------------------------------
+# /message-recruiter
+# --------------------------------------------------
+@app.route("/message-recruiter", methods=["GET", "POST"])
+def message_recruiter():
+    """Send a message to the user's recruiter via email."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    if not user.invited_by:
+        return redirect(url_for("dashboard"))
+
+    recruiter = user.invited_by
+    confirmation = None
+    error = None
+    message_text = ""
+
+    if request.method == "POST":
+        message_text = request.form.get("message", "").strip()
+        if not message_text:
+            error = "Please enter a message."
+        else:
+            result = send_recruiter_message(
+                from_user_name=user.name,
+                from_user_email=user.email,
+                to_recruiter_email=recruiter.email,
+                message_text=message_text,
+            )
+            if result.get("success"):
+                confirmation = f"Your message has been sent to {recruiter.name}."
+                message_text = ""
+            else:
+                error = "Sorry, your message could not be sent. Please try again later."
+                print(f"Recruiter message failed: {result.get('error')}")
+
+    return render_template("message_recruiter.html",
+        user_name=user.name, user_email=user.email,
+        recruiter_name=recruiter.name,
+        confirmation=confirmation, error=error,
+        message_text=message_text)
 
 
 # --------------------------------------------------
