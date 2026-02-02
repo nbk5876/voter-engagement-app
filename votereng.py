@@ -18,6 +18,7 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 from flask_sqlalchemy import SQLAlchemy
 from flask_dance.contrib.google import make_google_blueprint, google
 import os
+import secrets
 import socket
 import requests  # Added for MailGun API
 from datetime import datetime, timezone
@@ -71,9 +72,33 @@ class VoterSubmission(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class User(db.Model):
+    """Stores authenticated users from Google OAuth."""
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    google_id = db.Column(db.String(255), unique=True, nullable=False)
+    email = db.Column(db.String(200), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    invite_code = db.Column(db.String(20), unique=True, nullable=False)
+    invited_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    invited_by = db.relationship("User", remote_side=[id], backref="invitees")
+
+
 # Create tables if they don't exist
 with app.app_context():
     db.create_all()
+
+
+def generate_invite_code():
+    """Generate a unique, URL-safe invite code (8 characters)."""
+    for _ in range(10):
+        code = secrets.token_urlsafe(6)  # 6 bytes -> 8 URL-safe chars
+        if not User.query.filter_by(invite_code=code).first():
+            return code
+    raise RuntimeError("Failed to generate unique invite code after 10 attempts")
 
 
 # Initialize OpenAI client
@@ -161,16 +186,65 @@ This is an automated response from the Voter Engagement platform.
 # --------------------------------------------------
 @app.route("/google_authorized")
 def google_authorized():
-    """Handle Google OAuth callback and store user email in session."""
+    """Handle Google OAuth callback: persist user to DB and store session data."""
     if not google.authorized:
         return redirect(url_for("google.login"))
 
     resp = google.get("/oauth2/v2/userinfo")
-    if resp.ok:
-        user_info = resp.json()
-        session["user_email"] = user_info.get("email")
-        session["user_name"] = user_info.get("name")
-        print(f"User logged in: {session['user_email']}")
+    if not resp.ok:
+        print(f"Google userinfo request failed: {resp.status_code}")
+        return redirect(url_for("index"))
+
+    user_info = resp.json()
+    google_id = user_info.get("id")       # Google's unique user ID
+    email = user_info.get("email")
+    name = user_info.get("name", email)    # Fallback to email if name missing
+
+    if not google_id:
+        print("Google userinfo missing 'id' field")
+        return redirect(url_for("index"))
+
+    # Look up or create user in database
+    user = User.query.filter_by(google_id=google_id).first()
+
+    if user:
+        # Existing user: update name/email if changed
+        if user.email != email or user.name != name:
+            user.email = email
+            user.name = name
+            db.session.commit()
+            print(f"Updated user info: {email}")
+        print(f"Existing user logged in: {email} (id={user.id})")
+    else:
+        # New user: create record with invite code
+        invite_code = generate_invite_code()
+
+        # Resolve referral if ?ref= was captured on landing page
+        invited_by_user_id = None
+        ref_code = session.pop("ref_code", None)
+        if ref_code:
+            referrer = User.query.filter_by(invite_code=ref_code).first()
+            if referrer:
+                invited_by_user_id = referrer.id
+                print(f"Referral tracked: {email} invited by user {referrer.id} ({referrer.email})")
+            else:
+                print(f"Referral code '{ref_code}' not found, ignoring")
+
+        user = User(
+            google_id=google_id,
+            email=email,
+            name=name,
+            invite_code=invite_code,
+            invited_by_user_id=invited_by_user_id,
+        )
+        db.session.add(user)
+        db.session.commit()
+        print(f"New user created: {email} (id={user.id}, invite_code={invite_code})")
+
+    # Store in session for use across the app
+    session["user_id"] = user.id
+    session["user_email"] = email
+    session["user_name"] = name
 
     return redirect(url_for("index"))
 
@@ -200,6 +274,11 @@ def index():
     candidate = get_candidate(request.args)
     show_debug = should_show_debug(request.args)
 
+    # Capture referral code from ?ref= parameter (survives OAuth redirect)
+    ref_code = request.args.get("ref")
+    if ref_code:
+        session["ref_code"] = ref_code
+
     # Get user info from session if logged in
     user_email = session.get("user_email")
     user_name = session.get("user_name")
@@ -212,6 +291,31 @@ def index():
         user_email=user_email,
         user_name=user_name,
     )
+
+
+# --------------------------------------------------
+# /dashboard
+# --------------------------------------------------
+@app.route("/dashboard")
+def dashboard():
+    """Authenticated-only dashboard showing invite link, recruit stats, and actions."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    invite_link = request.host_url.rstrip("/") + "/?ref=" + user.invite_code
+    recruiter_name = user.invited_by.name if user.invited_by else None
+    recruit_count = len(user.invitees)
+
+    return render_template("dashboard.html",
+        user_name=user.name, user_email=user.email,
+        invite_link=invite_link, invite_code=user.invite_code,
+        recruiter_name=recruiter_name, recruit_count=recruit_count)
 
 
 # --------------------------------------------------
@@ -493,12 +597,12 @@ if __name__ == "__main__":
     if not os.getenv("OPENAI_API_KEY"):
         print("WARNING: OPENAI_API_KEY environment variable not set!")
     else:
-        print("✓ OpenAI API key loaded successfully")
+        print("[OK] OpenAI API key loaded successfully")
     
     if not os.getenv("MAILGUN_API_KEY") or not os.getenv("MAILGUN_DOMAIN"):
         print("WARNING: MailGun credentials not set. Email sending will be disabled.")
     else:
-        print("✓ MailGun credentials loaded successfully")
+        print("[OK] MailGun credentials loaded successfully")
 
     app.run(
         debug=False,

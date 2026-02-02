@@ -327,6 +327,7 @@
                 {% if user_email %}
                 <div class="user-info">
                     <span class="user-email">{{ user_email }}</span>
+                    <a href="{{ url_for('dashboard') }}" class="logout-btn">Dashboard</a>
                     <a href="{{ url_for('logout') }}" class="logout-btn">Sign Out</a>
                 </div>
                 {% else %}
