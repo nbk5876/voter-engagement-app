@@ -16,6 +16,7 @@ PR #4:
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
 from flask_dance.contrib.google import make_google_blueprint, google
 import os
 import secrets
@@ -83,6 +84,7 @@ class User(db.Model):
     invite_code = db.Column(db.String(20), unique=True, nullable=False)
     invited_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
     invited_by = db.relationship("User", remote_side=[id], backref="invitees")
 
@@ -361,7 +363,71 @@ def dashboard():
     return render_template("dashboard.html",
         user_name=user.name, user_email=user.email,
         invite_link=invite_link, invite_code=user.invite_code,
-        recruiter_name=recruiter_name, recruit_count=recruit_count)
+        recruiter_name=recruiter_name, recruit_count=recruit_count,
+        is_admin=user.is_admin)
+
+
+# --------------------------------------------------
+# /admin
+# --------------------------------------------------
+@app.route("/admin")
+def admin():
+    """Admin-only report page showing all users and anonymous submissions."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    if not user.is_admin:
+        return redirect(url_for("dashboard"))
+
+    # Section 1: All registered users
+    all_users = User.query.order_by(User.created_at.desc()).all()
+    users_data = []
+    for u in all_users:
+        users_data.append({
+            "id": u.id,
+            "name": u.name,
+            "email": u.email,
+            "invite_code": u.invite_code,
+            "recruited_by": u.invited_by.name if u.invited_by else None,
+            "recruit_count": len(u.invitees),
+            "is_admin": u.is_admin,
+            "created_at": u.created_at.strftime("%Y-%m-%d %H:%M") if u.created_at else "",
+        })
+
+    # Section 2: Anonymous submissions (voter_id IS NULL), grouped
+    anon_query = (
+        db.session.query(
+            VoterSubmission.name,
+            VoterSubmission.email,
+            VoterSubmission.voter_id,
+            func.count().label("submission_count"),
+            func.max(VoterSubmission.created_at).label("last_submission"),
+        )
+        .filter(VoterSubmission.voter_id.is_(None))
+        .group_by(VoterSubmission.name, VoterSubmission.email, VoterSubmission.voter_id)
+        .order_by(func.max(VoterSubmission.created_at).desc())
+        .all()
+    )
+    anon_data = []
+    for row in anon_query:
+        anon_data.append({
+            "name": row.name,
+            "email": row.email,
+            "voter_id": row.voter_id,
+            "submission_count": row.submission_count,
+            "last_submission": row.last_submission.strftime("%Y-%m-%d %H:%M") if row.last_submission else "",
+        })
+
+    return render_template("admin.html",
+        user_name=user.name, user_email=user.email, is_admin=user.is_admin,
+        users=users_data, user_count=len(users_data),
+        anon_submissions=anon_data, anon_count=len(anon_data))
 
 
 # --------------------------------------------------
