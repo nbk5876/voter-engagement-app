@@ -319,6 +319,28 @@ def dashboard():
 
 
 # --------------------------------------------------
+# /share
+# --------------------------------------------------
+@app.route("/share")
+def share():
+    """Share page with platform-specific pre-written messages and invite link."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    invite_link = request.host_url.rstrip("/") + "/?ref=" + user.invite_code
+
+    return render_template("share.html",
+        user_name=user.name, user_email=user.email,
+        invite_link=invite_link)
+
+
+# --------------------------------------------------
 # /respond
 # --------------------------------------------------
 @app.route("/respond", methods=["POST"])

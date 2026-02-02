@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Call5 Democracy</title>
+    <title>Share Your Invite Link - Call5 Democracy</title>
     <style>
         * {
             margin: 0;
@@ -75,103 +75,75 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
-        .dashboard-content {
+        .share-content {
             padding: 30px 20px;
         }
 
-        .welcome {
-            margin-bottom: 25px;
-        }
-
-        .welcome h2 {
+        .share-content h2 {
             font-size: 1.4rem;
             color: #333;
             margin-bottom: 6px;
         }
 
-        .welcome .recruiter {
+        .share-content .subtitle {
             font-size: 0.95rem;
             color: #666;
+            margin-bottom: 25px;
         }
 
-        .stats-card {
+        .platform-card {
             background: #f8f9fa;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             padding: 20px;
-            margin-bottom: 25px;
-            text-align: center;
+            margin-bottom: 18px;
         }
 
-        .stats-card .count {
-            font-size: 2.4rem;
+        .platform-card .platform-name {
+            font-size: 1.05rem;
             font-weight: 700;
-            color: #2c5aa0;
-            line-height: 1.2;
-        }
-
-        .stats-card .label {
-            font-size: 0.95rem;
-            color: #666;
-            margin-top: 4px;
-        }
-
-        .invite-section {
-            margin-bottom: 25px;
-        }
-
-        .invite-section label {
-            display: block;
-            margin-bottom: 8px;
             color: #333;
-            font-weight: 600;
-            font-size: 1rem;
+            margin-bottom: 10px;
         }
 
-        .invite-row {
-            display: flex;
-            gap: 10px;
-        }
-
-        .invite-row input {
-            flex: 1;
+        .platform-card textarea {
+            width: 100%;
             padding: 12px 14px;
             border: 2px solid #ccc;
             border-radius: 4px;
-            font-size: 0.95rem;
-            background: #f5f5f5;
+            font-size: 0.9rem;
+            font-family: inherit;
+            line-height: 1.5;
+            background: #fff;
             color: #333;
+            resize: vertical;
+            min-height: 100px;
         }
 
-        .copy-btn {
-            padding: 12px 20px;
+        .platform-card .copy-btn {
+            margin-top: 10px;
+            padding: 10px 20px;
             background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
             color: white;
             border: none;
             border-radius: 4px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
-            white-space: nowrap;
         }
 
-        .copy-btn:hover {
+        .platform-card .copy-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(44, 90, 160, 0.4);
         }
 
-        .copy-btn:active {
+        .platform-card .copy-btn:active {
             transform: translateY(0);
         }
 
-        .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .action-btn {
+        .back-btn {
+            display: block;
             width: 100%;
             padding: 16px;
             border-radius: 4px;
@@ -180,37 +152,16 @@
             cursor: pointer;
             text-decoration: none;
             text-align: center;
-            display: block;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .action-btn.primary {
             background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
             color: white;
             border: none;
+            margin-top: 8px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .action-btn.primary:hover {
+        .back-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(44, 90, 160, 0.4);
-        }
-
-        .action-btn.disabled {
-            background: #e0e0e0;
-            color: #999;
-            border: none;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        .action-btn.disabled.extra-faded {
-            opacity: 0.5;
-        }
-
-        .coming-soon {
-            font-size: 0.8rem;
-            font-weight: 400;
-            margin-left: 8px;
         }
 
         .footer {
@@ -229,12 +180,8 @@
                 font-size: 1.5rem;
             }
 
-            .dashboard-content {
+            .share-content {
                 padding: 20px 15px;
-            }
-
-            .invite-row {
-                flex-direction: column;
             }
 
             .footer {
@@ -257,38 +204,40 @@
             </div>
         </div>
 
-        <div class="dashboard-content">
-            <div class="welcome">
-                <h2>Welcome, {{ user_name }}!</h2>
-                {% if recruiter_name %}
-                <p class="recruiter">Recruited by: {{ recruiter_name }}</p>
-                {% endif %}
+        <div class="share-content">
+            <h2>Share Your Invite Link</h2>
+            <p class="subtitle">Copy a message below and paste it into your preferred platform.</p>
+
+            <div class="platform-card">
+                <div class="platform-name">Nextdoor</div>
+                <textarea id="text-nextdoor" readonly>Hey neighbors! I've been using Call5 Democracy to engage directly with local candidates on the issues that matter to our community. You can ask questions and get AI-powered responses based on real candidate positions. Join me — it's free and nonpartisan:
+{{ invite_link }}</textarea>
+                <button class="copy-btn" onclick="copyText('text-nextdoor', this)">Copy</button>
             </div>
 
-            <div class="stats-card">
-                <div class="count">{{ recruit_count }}</div>
-                <div class="label">People Recruited</div>
+            <div class="platform-card">
+                <div class="platform-name">Twitter</div>
+                <textarea id="text-twitter" readonly>Ask your local candidates the tough questions and get real answers. I'm using Call5 Democracy to stay engaged in local politics. Check it out:
+{{ invite_link }}
+#LocalPolitics #CivicEngagement #Call5Democracy</textarea>
+                <button class="copy-btn" onclick="copyText('text-twitter', this)">Copy</button>
             </div>
 
-            <div class="invite-section">
-                <label>Your Invite Link</label>
-                <div class="invite-row">
-                    <input type="text" id="inviteLink" value="{{ invite_link }}" readonly>
-                    <button class="copy-btn" id="copyBtn" onclick="copyInviteLink()">Copy</button>
-                </div>
+            <div class="platform-card">
+                <div class="platform-name">Bluesky</div>
+                <textarea id="text-bluesky" readonly>Found a great tool for engaging with local candidates — ask questions and get responses based on their actual positions. Give it a try:
+{{ invite_link }}</textarea>
+                <button class="copy-btn" onclick="copyText('text-bluesky', this)">Copy</button>
             </div>
 
-            <div class="actions">
-                <a href="{{ url_for('share') }}" class="action-btn primary">
-                    Share Your Invite Link
-                </a>
-                <button class="action-btn disabled{{ ' extra-faded' if not recruiter_name }}">
-                    Message Your Recruiter<span class="coming-soon">(Coming Soon)</span>
-                </button>
-                <a href="{{ url_for('index') }}" class="action-btn primary">
-                    Submit Voter Question
-                </a>
+            <div class="platform-card">
+                <div class="platform-name">Mastodon</div>
+                <textarea id="text-mastodon" readonly>If you care about local democracy, check out Call5 Democracy. Ask candidates questions and get AI-powered responses grounded in their real positions. Open, nonpartisan, and free:
+{{ invite_link }}</textarea>
+                <button class="copy-btn" onclick="copyText('text-mastodon', this)">Copy</button>
             </div>
+
+            <a href="{{ url_for('dashboard') }}" class="back-btn">Back to Dashboard</a>
         </div>
 
         <div class="footer">
@@ -297,16 +246,15 @@
     </div>
 
     <script>
-        function copyInviteLink() {
-            const input = document.getElementById('inviteLink');
-            const btn = document.getElementById('copyBtn');
-            navigator.clipboard.writeText(input.value).then(function() {
+        function copyText(textareaId, btn) {
+            var textarea = document.getElementById(textareaId);
+            navigator.clipboard.writeText(textarea.value).then(function() {
                 btn.textContent = 'Copied!';
                 setTimeout(function() {
                     btn.textContent = 'Copy';
                 }, 2000);
             }, function() {
-                input.select();
+                textarea.select();
                 document.execCommand('copy');
                 btn.textContent = 'Copied!';
                 setTimeout(function() {
