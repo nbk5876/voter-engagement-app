@@ -142,6 +142,13 @@
             transform: translateY(0);
         }
 
+        .platform-card .email-hint {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #666;
+            font-style: italic;
+        }
+
         .back-btn {
             display: block;
             width: 100%;
@@ -235,6 +242,24 @@
                 <textarea id="text-mastodon" readonly>If you care about local democracy, check out Call5 Democracy. Ask candidates questions and get AI-powered responses grounded in their real positions. Open, nonpartisan, and free:
 {{ invite_link }}</textarea>
                 <button class="copy-btn" onclick="copyText('text-mastodon', this)">Copy</button>
+            </div>
+
+            <div class="platform-card">
+                <div class="platform-name">Email</div>
+                <textarea id="text-email" readonly>Subject: Join me on Call5 Democracy
+
+Hi,
+
+I wanted to share Call5 Democracy with you - it's a free, nonpartisan tool that lets you engage directly with local candidates on the issues that matter most.
+
+You can ask questions and get AI-powered responses based on real candidate positions. I think you'd find it valuable.
+
+Here's my personal invite link:
+{{ invite_link }}
+
+Hope you'll check it out!</textarea>
+                <button class="copy-btn" onclick="copyText('text-email', this)">Copy</button>
+                <p class="email-hint">Copy the subject and body, then paste into your email client.</p>
             </div>
 
             <a href="{{ url_for('dashboard') }}" class="back-btn">Back to Dashboard</a>
