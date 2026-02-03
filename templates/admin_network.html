@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Tree - Call5 Democracy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .auth-section {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .auth-section .user-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .auth-section .user-email {
+            font-size: 0.95rem;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .admin-content {
+            padding: 30px 20px;
+        }
+
+        .admin-content h2 {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .tree-container {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .tree-node {
+            padding: 6px 0;
+            font-size: 0.95rem;
+            color: #333;
+        }
+
+        .tree-node .name {
+            font-weight: 600;
+        }
+
+        .tree-node .recruits {
+            color: #666;
+            font-weight: 400;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #2c5aa0;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px 20px;
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .admin-content {
+                padding: 20px 15px;
+            }
+
+            .footer {
+                font-size: 0.75rem;
+                padding: 12px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Call5 Democracy</h1>
+
+            <div class="auth-section">
+                <div class="user-info">
+                    <span class="user-email">{{ user_email }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn">Sign Out</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <h2>Network Tree</h2>
+
+            <div class="tree-container">
+                {% for node in tree_nodes %}
+                <div class="tree-node" style="margin-left: {{ node.level * 25 }}px;">
+                    <span class="name">{{ node.name }}</span>
+                    <span class="recruits">({{ node.recruit_count }} recruit{{ 's' if node.recruit_count != 1 else '' }})</span>
+                </div>
+                {% endfor %}
+                {% if not tree_nodes %}
+                <div class="tree-node">No users found.</div>
+                {% endif %}
+            </div>
+
+            <a href="{{ url_for('dashboard') }}" class="back-link">&larr; Back to Dashboard</a>
+        </div>
+
+        <div class="footer">
+            v0.3.1 | February 2026 | Call 5 Hub and Spoke
+        </div>
+    </div>
+</body>
+</html>

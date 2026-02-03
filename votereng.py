@@ -431,6 +431,58 @@ def admin():
 
 
 # --------------------------------------------------
+# /admin/network
+# --------------------------------------------------
+@app.route("/admin/network")
+def admin_network():
+    """Admin-only network tree showing recruitment hierarchy."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    if not user.is_admin:
+        return redirect(url_for("dashboard"))
+
+    # Load all users and group by parent (invited_by_user_id)
+    all_users = User.query.all()
+    users_by_parent = {}
+    for u in all_users:
+        parent_id = u.invited_by_user_id
+        if parent_id not in users_by_parent:
+            users_by_parent[parent_id] = []
+        users_by_parent[parent_id].append(u)
+
+    # Sort each group by created_at
+    for parent_id in users_by_parent:
+        users_by_parent[parent_id].sort(key=lambda u: u.created_at or datetime.min)
+
+    def build_tree(parent_id, level):
+        """Recursively build flattened tree with level info."""
+        nodes = []
+        for u in users_by_parent.get(parent_id, []):
+            nodes.append({
+                "id": u.id,
+                "name": u.name,
+                "recruit_count": len(u.invitees),
+                "level": level,
+            })
+            nodes.extend(build_tree(u.id, level + 1))
+        return nodes
+
+    # Root nodes have invited_by_user_id = None
+    tree_nodes = build_tree(None, 0)
+
+    return render_template("admin_network.html",
+        user_name=user.name, user_email=user.email,
+        tree_nodes=tree_nodes, user_count=len(tree_nodes))
+
+
+# --------------------------------------------------
 # /share
 # --------------------------------------------------
 @app.route("/share")
