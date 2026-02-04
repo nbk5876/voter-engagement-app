@@ -258,6 +258,66 @@ This message was sent via Call5 Democracy.
         return {"success": False, "error": str(e)}
 
 
+def send_invitation_email(sender_name, sender_email, recipient_email, invite_link, personal_message=None):
+    """Send an invitation email to join Call5 Democracy."""
+    try:
+        mailgun_api_key = os.getenv("MAILGUN_API_KEY")
+        mailgun_domain = os.getenv("MAILGUN_DOMAIN")
+        mailgun_base_url = os.getenv("MAILGUN_BASE_URL", "https://api.mailgun.net")
+
+        if not mailgun_api_key or not mailgun_domain:
+            return {"success": False, "error": "MailGun credentials not configured"}
+
+        # Build personal message section if provided
+        personal_section = ""
+        if personal_message and personal_message.strip():
+            personal_section = f"""
+{personal_message.strip()}
+
+"""
+
+        email_body = f"""Hi,
+
+{sender_name} invited you to join Call5 Democracy - a platform for year-round civic engagement and network organizing.
+{personal_section}
+Join using {sender_name}'s invite link:
+{invite_link}
+
+About Call5 Democracy:
+- Connect with your recruiter and grow your civic network
+- Ask questions to AI-powered candidate personalities
+- Organize into groups for coordinated action
+- Track campaign promises and hold leaders accountable
+
+See you there!
+
+━━━━━━━━━━━━━━━
+This invitation was sent by {sender_name} ({sender_email})
+A copy has been sent to their email address.
+"""
+
+        response = requests.post(
+            f"{mailgun_base_url}/v3/{mailgun_domain}/messages",
+            auth=("api", mailgun_api_key),
+            data={
+                "from": f"Call5 <noreply@{mailgun_domain}>",
+                "to": recipient_email,
+                "cc": sender_email,
+                "subject": f"{sender_name} invited you to join Call5 Democracy",
+                "text": email_body,
+                "h:Reply-To": sender_email,
+            }
+        )
+
+        if response.status_code == 200:
+            return {"success": True, "message_id": response.json().get("id")}
+        else:
+            return {"success": False, "error": f"MailGun error: {response.status_code}", "details": response.text}
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 # --------------------------------------------------
 # Google OAuth Callback
 # --------------------------------------------------
@@ -522,9 +582,69 @@ def share():
 
     invite_link = request.host_url.rstrip("/") + "/?ref=" + user.invite_code
 
+    # Get confirmation/error from query params (after redirect from send-email)
+    confirmation = request.args.get("confirmation")
+    error = request.args.get("error")
+
     return render_template("share.html",
         user_name=user.name, user_email=user.email,
-        invite_link=invite_link)
+        invite_link=invite_link,
+        confirmation=confirmation, error=error)
+
+
+# --------------------------------------------------
+# /share/send-email
+# --------------------------------------------------
+@app.route("/share/send-email", methods=["POST"])
+def share_send_email():
+    """Send an invitation email to a recipient."""
+    import re
+
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    recipient_email = request.form.get("recipient_email", "").strip().lower()
+    personal_message = request.form.get("personal_message", "").strip()
+
+    # Validate email format
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not recipient_email:
+        return redirect(url_for("share", error="Please enter a recipient email address."))
+    if not re.match(email_pattern, recipient_email):
+        return redirect(url_for("share", error="Please enter a valid email address."))
+
+    # Prevent sending to self
+    if recipient_email == user.email.lower():
+        return redirect(url_for("share", error="You cannot send an invitation to yourself."))
+
+    # Limit personal message length
+    if len(personal_message) > 1000:
+        return redirect(url_for("share", error="Personal message is too long (max 1000 characters)."))
+
+    # Build invite link
+    invite_link = request.host_url.rstrip("/") + "/?ref=" + user.invite_code
+
+    # Send email
+    result = send_invitation_email(
+        sender_name=user.name,
+        sender_email=user.email,
+        recipient_email=recipient_email,
+        invite_link=invite_link,
+        personal_message=personal_message if personal_message else None,
+    )
+
+    if result.get("success"):
+        return redirect(url_for("share",
+            confirmation=f"Invitation sent to {recipient_email}! A copy has been sent to {user.email}."))
+    else:
+        print(f"Invitation email failed: {result.get('error')}")
+        return redirect(url_for("share", error="Sorry, the invitation could not be sent. Please try again later."))
 
 
 # --------------------------------------------------
