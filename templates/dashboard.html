@@ -252,9 +252,6 @@
             <div class="auth-section">
                 <div class="user-info">
                     <span class="user-email">{{ user_email }}</span>
-                    {% if is_admin %}
-                    <a href="{{ url_for('admin') }}" class="logout-btn">Admin</a>
-                    {% endif %}
                     <a href="{{ url_for('logout') }}" class="logout-btn">Sign Out</a>
                 </div>
             </div>
@@ -309,6 +306,14 @@
                 <a href="{{ url_for('index') }}" class="action-btn primary">
                     Submit Voter Question
                 </a>
+                {% if is_admin %}
+                <a href="{{ url_for('admin') }}" class="action-btn primary">
+                    Admin
+                </a>
+                <a href="{{ url_for('admin_network') }}" class="action-btn primary">
+                    Tree
+                </a>
+                {% endif %}
             </div>
         </div>
 
