@@ -1,0 +1,248 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Group - Call5 Democracy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .auth-section {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .auth-section .user-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .auth-section .user-email {
+            font-size: 0.95rem;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .form-content {
+            padding: 30px 20px;
+        }
+
+        .form-content h2 {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .form-content .subtitle {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .error-banner {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            color: #721c24;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .create-form label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .create-form input[type="text"],
+        .create-form textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            line-height: 1.5;
+            background: #fff;
+            color: #333;
+            margin-bottom: 16px;
+        }
+
+        .create-form textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .create-form input[type="text"]:focus,
+        .create-form textarea:focus {
+            outline: none;
+            border-color: #2c5aa0;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(44, 90, 160, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .back-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border-radius: 4px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+            border: none;
+            margin-top: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(44, 90, 160, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px 20px;
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .form-content {
+                padding: 20px 15px;
+            }
+
+            .footer {
+                font-size: 0.75rem;
+                padding: 12px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Call5 Democracy</h1>
+
+            <div class="auth-section">
+                <div class="user-info">
+                    <span class="user-email">{{ user_email }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn">Sign Out</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-content">
+            <h2>Create a Group</h2>
+            <p class="subtitle">Create a civic group to organize your community.</p>
+
+            {% if error %}
+            <div class="error-banner">{{ error }}</div>
+            {% endif %}
+
+            <form class="create-form" method="POST" action="{{ url_for('groups_create') }}">
+                <label for="name">Group Name</label>
+                <input type="text" id="name" name="name" maxlength="100" placeholder="e.g., 54 Ave Group" required>
+
+                <label for="description">Description (optional)</label>
+                <textarea id="description" name="description" placeholder="Describe your group's purpose..."></textarea>
+
+                <button type="submit" class="submit-btn">Create Group</button>
+            </form>
+
+            <a href="{{ url_for('dashboard') }}" class="back-btn">Back to Dashboard</a>
+        </div>
+
+        <div class="footer">
+            v0.3 | February 2026 | Call 5 Hub and Spoke
+        </div>
+    </div>
+</body>
+</html>

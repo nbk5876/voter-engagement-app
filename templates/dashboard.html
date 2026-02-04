@@ -294,6 +294,18 @@
                     Message Your Recruiter<span class="coming-soon">(No Recruiter)</span>
                 </button>
                 {% endif %}
+                {% if recruit_count > 0 %}
+                <a href="{{ url_for('groups_create') }}" class="action-btn primary">
+                    Create Group
+                </a>
+                {% else %}
+                <button class="action-btn disabled extra-faded">
+                    Create Group<span class="coming-soon">(Recruit first)</span>
+                </button>
+                {% endif %}
+                <a href="{{ url_for('groups_list') }}" class="action-btn primary">
+                    Your Groups
+                </a>
                 <a href="{{ url_for('index') }}" class="action-btn primary">
                     Submit Voter Question
                 </a>

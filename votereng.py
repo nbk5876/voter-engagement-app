@@ -89,6 +89,35 @@ class User(db.Model):
     invited_by = db.relationship("User", remote_side=[id], backref="invitees")
 
 
+class Group(db.Model):
+    """Stores civic groups created by users."""
+    __tablename__ = "groups"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    created_by = db.relationship("User", backref="groups_created")
+    members = db.relationship("GroupMember", backref="group", cascade="all, delete-orphan")
+
+
+class GroupMember(db.Model):
+    """Junction table for group membership."""
+    __tablename__ = "group_members"
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    role = db.Column(db.String(20), default="member")  # 'founder' or 'member'
+    joined_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (db.UniqueConstraint("group_id", "user_id", name="uq_group_user"),)
+
+    user = db.relationship("User", backref="group_memberships")
+
+
 # Create tables if they don't exist
 with app.app_context():
     db.create_all()
@@ -550,6 +579,194 @@ def message_recruiter():
         recruiter_name=recruiter.name,
         confirmation=confirmation, error=error,
         message_text=message_text)
+
+
+# --------------------------------------------------
+# /groups/create
+# --------------------------------------------------
+@app.route("/groups/create", methods=["GET", "POST"])
+def groups_create():
+    """Create a new civic group (requires recruit_count > 0)."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    recruit_count = len(user.invitees)
+    if recruit_count == 0:
+        return redirect(url_for("dashboard"))
+
+    error = None
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        description = request.form.get("description", "").strip() or None
+
+        if not name:
+            error = "Please enter a group name."
+        elif len(name) > 100:
+            error = "Group name must be 100 characters or less."
+        else:
+            # Create group
+            group = Group(
+                name=name,
+                description=description,
+                created_by_user_id=user.id,
+            )
+            db.session.add(group)
+            db.session.flush()  # Get the group ID
+
+            # Add founder as member
+            member = GroupMember(
+                group_id=group.id,
+                user_id=user.id,
+                role="founder",
+            )
+            db.session.add(member)
+            db.session.commit()
+
+            return redirect(url_for("group_manage", group_id=group.id))
+
+    return render_template("group_create.html",
+        user_name=user.name, user_email=user.email,
+        error=error)
+
+
+# --------------------------------------------------
+# /groups
+# --------------------------------------------------
+@app.route("/groups")
+def groups_list():
+    """List all groups the user is a member of."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    recruit_count = len(user.invitees)
+
+    # Get all groups the user is a member of
+    memberships = GroupMember.query.filter_by(user_id=user.id).all()
+    groups_data = []
+    for m in memberships:
+        groups_data.append({
+            "id": m.group.id,
+            "name": m.group.name,
+            "role": m.role,
+            "member_count": len(m.group.members),
+            "created_by": m.group.created_by.name,
+            "joined_at": m.joined_at.strftime("%Y-%m-%d") if m.joined_at else "",
+        })
+
+    return render_template("groups_list.html",
+        user_name=user.name, user_email=user.email,
+        groups=groups_data, recruit_count=recruit_count)
+
+
+# --------------------------------------------------
+# /groups/<id>
+# --------------------------------------------------
+@app.route("/groups/<int:group_id>")
+def group_manage(group_id):
+    """Manage a group: view members, invite recruits."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    group = db.session.get(Group, group_id)
+    if not group:
+        return redirect(url_for("groups_list"))
+
+    # Check user is a member of this group
+    membership = GroupMember.query.filter_by(group_id=group_id, user_id=user.id).first()
+    if not membership:
+        return redirect(url_for("groups_list"))
+
+    # Get members list
+    members_data = []
+    for m in group.members:
+        members_data.append({
+            "id": m.user.id,
+            "name": m.user.name,
+            "email": m.user.email,
+            "role": m.role,
+            "joined_at": m.joined_at.strftime("%Y-%m-%d") if m.joined_at else "",
+        })
+
+    # Get recruits who are NOT yet in this group (for invite dropdown)
+    existing_member_ids = {m.user_id for m in group.members}
+    invitable_recruits = [r for r in user.invitees if r.id not in existing_member_ids]
+
+    confirmation = request.args.get("invited")
+
+    return render_template("group_manage.html",
+        user_name=user.name, user_email=user.email,
+        group=group, members=members_data,
+        invitable_recruits=invitable_recruits,
+        confirmation=confirmation)
+
+
+# --------------------------------------------------
+# /groups/<id>/invite
+# --------------------------------------------------
+@app.route("/groups/<int:group_id>/invite", methods=["POST"])
+def group_invite(group_id):
+    """Add a recruit to a group."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    group = db.session.get(Group, group_id)
+    if not group:
+        return redirect(url_for("groups_list"))
+
+    # Check user is a member of this group
+    membership = GroupMember.query.filter_by(group_id=group_id, user_id=user.id).first()
+    if not membership:
+        return redirect(url_for("groups_list"))
+
+    recruit_id = request.form.get("recruit_id", type=int)
+    if not recruit_id:
+        return redirect(url_for("group_manage", group_id=group_id))
+
+    # Validate the recruit belongs to this user
+    recruit = db.session.get(User, recruit_id)
+    if not recruit or recruit.invited_by_user_id != user.id:
+        return redirect(url_for("group_manage", group_id=group_id))
+
+    # Check recruit not already in group
+    existing = GroupMember.query.filter_by(group_id=group_id, user_id=recruit_id).first()
+    if existing:
+        return redirect(url_for("group_manage", group_id=group_id))
+
+    # Add recruit as member
+    member = GroupMember(
+        group_id=group_id,
+        user_id=recruit_id,
+        role="member",
+    )
+    db.session.add(member)
+    db.session.commit()
+
+    return redirect(url_for("group_manage", group_id=group_id, invited=recruit.name))
 
 
 # --------------------------------------------------
