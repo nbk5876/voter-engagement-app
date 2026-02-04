@@ -411,9 +411,6 @@ def admin():
         session.clear()
         return redirect(url_for("index"))
 
-    if not user.is_admin:
-        return redirect(url_for("dashboard"))
-
     # Section 1: All registered users
     all_users = User.query.order_by(User.created_at.desc()).all()
     users_data = []
@@ -473,9 +470,6 @@ def admin_network():
     if not user:
         session.clear()
         return redirect(url_for("index"))
-
-    if not user.is_admin:
-        return redirect(url_for("dashboard"))
 
     # Load all users and group by parent (invited_by_user_id)
     all_users = User.query.all()
