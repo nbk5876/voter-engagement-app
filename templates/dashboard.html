@@ -294,7 +294,7 @@
                     Share Your Invite Link
                 </a>
                 {% if recruiter_name %}
-                <a href="{{ url_for('message_recruiter') }}" class="action-btn primary">
+                <a href="{{ url_for('messages_compose', to=recruiter_id) }}" class="action-btn primary">
                     Message Your Recruiter
                 </a>
                 {% else %}
@@ -302,6 +302,18 @@
                     Message Your Recruiter<span class="coming-soon">(No Recruiter)</span>
                 </button>
                 {% endif %}
+                {% if recruit_count > 0 %}
+                <a href="{{ url_for('messages_compose') }}" class="action-btn primary">
+                    Message Your Recruits
+                </a>
+                {% else %}
+                <button class="action-btn disabled extra-faded">
+                    Message Your Recruits<span class="coming-soon">(No Recruits)</span>
+                </button>
+                {% endif %}
+                <a href="{{ url_for('messages_inbox') }}" class="action-btn primary">
+                    Messages
+                </a>
                 {% if recruit_count > 0 %}
                 <a href="{{ url_for('groups_create') }}" class="action-btn primary">
                     Create Group

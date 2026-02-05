@@ -1,0 +1,306 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages - Call5 Democracy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .page-label {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 400;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .auth-section {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .auth-section .user-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .auth-section .user-email {
+            font-size: 0.95rem;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .inbox-content {
+            padding: 30px 20px;
+        }
+
+        .inbox-content h2 {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .inbox-content .subtitle {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .compose-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .compose-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(44, 90, 160, 0.4);
+        }
+
+        .conversation-list {
+            margin-bottom: 20px;
+        }
+
+        .conversation-item {
+            display: block;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .conversation-item:hover {
+            border-color: #2c5aa0;
+            background: #f8f9fa;
+        }
+
+        .conversation-item.has-unread {
+            border-color: #2c5aa0;
+            background: #f0f5ff;
+        }
+
+        .conversation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .partner-name {
+            font-weight: 700;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .conversation-time {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .conversation-preview {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .conversation-preview .from-label {
+            color: #999;
+        }
+
+        .unread-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #2c5aa0;
+            color: white;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .empty-state p {
+            margin-bottom: 15px;
+        }
+
+        .back-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border-radius: 4px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+            border: none;
+            margin-top: 8px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(44, 90, 160, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px 20px;
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .inbox-content {
+                padding: 20px 15px;
+            }
+
+            .footer {
+                font-size: 0.75rem;
+                padding: 12px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="page-label">Messages</span>
+            <h1>Call5 Democracy</h1>
+
+            <div class="auth-section">
+                <div class="user-info">
+                    <span class="user-email">{{ user_email }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn">Sign Out</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="inbox-content">
+            <h2>Messages</h2>
+            <p class="subtitle">Your conversations with recruiters and recruits.</p>
+
+            {% if messageable %}
+            <a href="{{ url_for('messages_compose') }}" class="compose-btn">New Message</a>
+            {% endif %}
+
+            {% if conversations %}
+            <div class="conversation-list">
+                {% for c in conversations %}
+                <a href="{{ url_for('messages_conversation', partner_id=c.partner_id) }}" class="conversation-item {% if c.unread_count > 0 %}has-unread{% endif %}">
+                    <div class="conversation-header">
+                        <span class="partner-name">
+                            {{ c.partner_name }}
+                            {% if c.unread_count > 0 %}
+                            <span class="unread-badge">{{ c.unread_count }} new</span>
+                            {% endif %}
+                        </span>
+                        <span class="conversation-time">{{ c.latest_time }}</span>
+                    </div>
+                    <div class="conversation-preview">
+                        <span class="from-label">{% if c.is_from_me %}You: {% endif %}</span>{{ c.latest_message }}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No messages yet.</p>
+                {% if messageable %}
+                <p>Start a conversation with your recruiter or recruits!</p>
+                {% else %}
+                <p>You can message your recruiter once someone recruits you, or message recruits once you recruit someone.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <a href="{{ url_for('dashboard') }}" class="back-btn">Back to Dashboard</a>
+        </div>
+
+        <div class="footer">
+            v0.4 | February 2026 | Call 5 Hub and Spoke
+        </div>
+    </div>
+</body>
+</html>

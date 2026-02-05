@@ -118,6 +118,24 @@ class GroupMember(db.Model):
     user = db.relationship("User", backref="group_memberships")
 
 
+class Message(db.Model):
+    """Stores 1:1 messages between recruiters and recruits."""
+    __tablename__ = "messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    sender_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    recipient_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    subject = db.Column(db.String(200), nullable=True)
+    body = db.Column(db.Text, nullable=False)
+    sent_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    read_at = db.Column(db.DateTime, nullable=True)
+
+    __table_args__ = (db.CheckConstraint("sender_user_id != recipient_user_id", name="ck_no_self_message"),)
+
+    sender = db.relationship("User", foreign_keys=[sender_user_id], backref="messages_sent")
+    recipient = db.relationship("User", foreign_keys=[recipient_user_id], backref="messages_received")
+
+
 # Create tables if they don't exist
 with app.app_context():
     db.create_all()
@@ -377,6 +395,71 @@ Reply to this email to contact {founder.name} directly.
     return {"sent": sent, "failed": failed}
 
 
+def can_message(sender, recipient):
+    """Check if sender can message recipient (must have recruitment relationship)."""
+    if sender.id == recipient.id:
+        return False
+    # Sender recruited recipient
+    if recipient.invited_by_user_id == sender.id:
+        return True
+    # Recipient recruited sender
+    if sender.invited_by_user_id == recipient.id:
+        return True
+    return False
+
+
+def send_message_notification(sender, recipient, subject, body):
+    """Send email notification for a new message."""
+    try:
+        mailgun_api_key = os.getenv("MAILGUN_API_KEY")
+        mailgun_domain = os.getenv("MAILGUN_DOMAIN")
+        mailgun_base_url = os.getenv("MAILGUN_BASE_URL", "https://api.mailgun.net")
+
+        if not mailgun_api_key or not mailgun_domain:
+            return {"success": False, "error": "MailGun credentials not configured"}
+
+        render_url = os.getenv("RENDER_EXTERNAL_URL", "https://voter-engagement-app.onrender.com")
+        messages_url = f"{render_url}/messages/conversation/{sender.id}"
+
+        email_subject = subject if subject else f"Message from {sender.name}"
+
+        email_body = f"""Hi {recipient.name},
+
+You have a new message from {sender.name} on Call5 Democracy.
+
+━━━━━━━━━━━━━━━
+
+{body}
+
+━━━━━━━━━━━━━━━
+
+View and reply: {messages_url}
+
+Sent via Call5 Democracy
+Reply to this email to respond directly to {sender.name}.
+"""
+
+        response = requests.post(
+            f"{mailgun_base_url}/v3/{mailgun_domain}/messages",
+            auth=("api", mailgun_api_key),
+            data={
+                "from": f"Call5 <noreply@{mailgun_domain}>",
+                "to": recipient.email,
+                "subject": f"Message from {sender.name} via Call5 Democracy",
+                "text": email_body,
+                "h:Reply-To": sender.email,
+            }
+        )
+
+        if response.status_code == 200:
+            return {"success": True, "message_id": response.json().get("id")}
+        else:
+            return {"success": False, "error": f"MailGun error: {response.status_code}"}
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 # --------------------------------------------------
 # Google OAuth Callback
 # --------------------------------------------------
@@ -506,13 +589,14 @@ def dashboard():
 
     invite_link = request.host_url.rstrip("/") + "/?ref=" + user.invite_code
     recruiter_name = user.invited_by.name if user.invited_by else None
+    recruiter_id = user.invited_by.id if user.invited_by else None
     recruit_count = len(user.invitees)
 
     return render_template("dashboard.html",
         user_name=user.name, user_email=user.email,
         invite_link=invite_link, invite_code=user.invite_code,
-        recruiter_name=recruiter_name, recruit_count=recruit_count,
-        is_admin=user.is_admin)
+        recruiter_name=recruiter_name, recruiter_id=recruiter_id,
+        recruit_count=recruit_count, is_admin=user.is_admin)
 
 
 # --------------------------------------------------
@@ -1011,6 +1095,244 @@ def group_broadcast(group_id):
     else:
         return redirect(url_for("group_manage", group_id=group_id,
             error="Failed to send message. Please try again."))
+
+
+# --------------------------------------------------
+# /messages
+# --------------------------------------------------
+@app.route("/messages")
+def messages_inbox():
+    """Show all conversations for the current user."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    # Get all users this person has messaged or been messaged by
+    from sqlalchemy import or_, and_, func
+
+    # Subquery to get the latest message per conversation partner
+    sent_partners = db.session.query(Message.recipient_user_id.label("partner_id")) \
+        .filter(Message.sender_user_id == user.id).distinct()
+    received_partners = db.session.query(Message.sender_user_id.label("partner_id")) \
+        .filter(Message.recipient_user_id == user.id).distinct()
+
+    partner_ids = set()
+    for row in sent_partners:
+        partner_ids.add(row.partner_id)
+    for row in received_partners:
+        partner_ids.add(row.partner_id)
+
+    conversations = []
+    for partner_id in partner_ids:
+        partner = db.session.get(User, partner_id)
+        if not partner:
+            continue
+
+        # Get latest message in this conversation
+        latest = Message.query.filter(
+            or_(
+                and_(Message.sender_user_id == user.id, Message.recipient_user_id == partner_id),
+                and_(Message.sender_user_id == partner_id, Message.recipient_user_id == user.id)
+            )
+        ).order_by(Message.sent_at.desc()).first()
+
+        # Count unread messages from this partner
+        unread = Message.query.filter(
+            Message.sender_user_id == partner_id,
+            Message.recipient_user_id == user.id,
+            Message.read_at.is_(None)
+        ).count()
+
+        if latest:
+            conversations.append({
+                "partner_id": partner.id,
+                "partner_name": partner.name,
+                "partner_email": partner.email,
+                "latest_message": latest.body[:100] + "..." if len(latest.body) > 100 else latest.body,
+                "latest_time": latest.sent_at.strftime("%Y-%m-%d %H:%M") if latest.sent_at else "",
+                "unread_count": unread,
+                "is_from_me": latest.sender_user_id == user.id,
+            })
+
+    # Sort by latest message time (most recent first)
+    conversations.sort(key=lambda c: c["latest_time"], reverse=True)
+
+    # Get messageable users for compose dropdown
+    messageable = []
+    # Recruiter (if exists)
+    if user.invited_by:
+        messageable.append({"id": user.invited_by.id, "name": user.invited_by.name, "relation": "Recruiter"})
+    # Recruits
+    for recruit in user.invitees:
+        messageable.append({"id": recruit.id, "name": recruit.name, "relation": "Recruit"})
+
+    return render_template("messages_inbox.html",
+        user_name=user.name, user_email=user.email,
+        conversations=conversations, messageable=messageable)
+
+
+# --------------------------------------------------
+# /messages/compose
+# --------------------------------------------------
+@app.route("/messages/compose", methods=["GET", "POST"])
+def messages_compose():
+    """Compose a new message."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    # Get messageable users
+    messageable = []
+    if user.invited_by:
+        messageable.append({"id": user.invited_by.id, "name": user.invited_by.name, "relation": "Recruiter"})
+    for recruit in user.invitees:
+        messageable.append({"id": recruit.id, "name": recruit.name, "relation": "Recruit"})
+
+    error = None
+    confirmation = None
+    preselect_id = request.args.get("to", type=int)
+
+    if request.method == "POST":
+        recipient_id = request.form.get("recipient_id", type=int)
+        subject = request.form.get("subject", "").strip()
+        body = request.form.get("body", "").strip()
+
+        if not recipient_id:
+            error = "Please select a recipient."
+        elif not body:
+            error = "Message cannot be empty."
+        elif len(body) > 2000:
+            error = "Message must be under 2000 characters."
+        elif len(subject) > 200:
+            error = "Subject must be under 200 characters."
+        else:
+            recipient = db.session.get(User, recipient_id)
+            if not recipient:
+                error = "Recipient not found."
+            elif not can_message(user, recipient):
+                error = "You cannot message this user."
+            else:
+                # Create message
+                msg = Message(
+                    sender_user_id=user.id,
+                    recipient_user_id=recipient.id,
+                    subject=subject if subject else None,
+                    body=body,
+                )
+                db.session.add(msg)
+                db.session.commit()
+
+                # Send email notification
+                send_message_notification(user, recipient, subject, body)
+
+                return redirect(url_for("messages_conversation", partner_id=recipient.id,
+                    sent="Message sent successfully!"))
+
+    return render_template("message_compose.html",
+        user_name=user.name, user_email=user.email,
+        messageable=messageable, preselect_id=preselect_id,
+        error=error, confirmation=confirmation)
+
+
+# --------------------------------------------------
+# /messages/conversation/<partner_id>
+# --------------------------------------------------
+@app.route("/messages/conversation/<int:partner_id>", methods=["GET", "POST"])
+def messages_conversation(partner_id):
+    """View conversation with a specific user and reply."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    partner = db.session.get(User, partner_id)
+    if not partner:
+        return redirect(url_for("messages_inbox"))
+
+    # Check can message
+    if not can_message(user, partner):
+        return redirect(url_for("messages_inbox"))
+
+    error = None
+    confirmation = request.args.get("sent")
+
+    if request.method == "POST":
+        body = request.form.get("body", "").strip()
+
+        if not body:
+            error = "Message cannot be empty."
+        elif len(body) > 2000:
+            error = "Message must be under 2000 characters."
+        else:
+            msg = Message(
+                sender_user_id=user.id,
+                recipient_user_id=partner.id,
+                body=body,
+            )
+            db.session.add(msg)
+            db.session.commit()
+
+            send_message_notification(user, partner, None, body)
+
+            return redirect(url_for("messages_conversation", partner_id=partner_id,
+                sent="Message sent!"))
+
+    # Mark unread messages from partner as read
+    unread_messages = Message.query.filter(
+        Message.sender_user_id == partner_id,
+        Message.recipient_user_id == user.id,
+        Message.read_at.is_(None)
+    ).all()
+    for msg in unread_messages:
+        msg.read_at = datetime.now(timezone.utc)
+    if unread_messages:
+        db.session.commit()
+
+    # Get all messages in this conversation
+    from sqlalchemy import or_, and_
+    messages = Message.query.filter(
+        or_(
+            and_(Message.sender_user_id == user.id, Message.recipient_user_id == partner_id),
+            and_(Message.sender_user_id == partner_id, Message.recipient_user_id == user.id)
+        )
+    ).order_by(Message.sent_at.asc()).all()
+
+    messages_data = []
+    for m in messages:
+        messages_data.append({
+            "id": m.id,
+            "is_from_me": m.sender_user_id == user.id,
+            "sender_name": m.sender.name,
+            "body": m.body,
+            "sent_at": m.sent_at.strftime("%Y-%m-%d %H:%M") if m.sent_at else "",
+        })
+
+    # Determine relationship
+    if partner.invited_by_user_id == user.id:
+        relationship = "Your Recruit"
+    elif user.invited_by_user_id == partner.id:
+        relationship = "Your Recruiter"
+    else:
+        relationship = ""
+
+    return render_template("message_conversation.html",
+        user_name=user.name, user_email=user.email,
+        partner=partner, relationship=relationship,
+        messages=messages_data, error=error, confirmation=confirmation)
 
 
 # --------------------------------------------------

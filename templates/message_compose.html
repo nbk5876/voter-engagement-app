@@ -1,0 +1,267 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Message - Call5 Democracy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .page-label {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 400;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .auth-section {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .auth-section .user-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .auth-section .user-email {
+            font-size: 0.95rem;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .compose-content {
+            padding: 30px 20px;
+        }
+
+        .compose-content h2 {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .error-banner {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            color: #721c24;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .compose-form label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .compose-form select,
+        .compose-form input[type="text"],
+        .compose-form textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: #fff;
+            color: #333;
+            margin-bottom: 16px;
+        }
+
+        .compose-form textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .compose-form select:focus,
+        .compose-form input[type="text"]:focus,
+        .compose-form textarea:focus {
+            outline: none;
+            border-color: #2c5aa0;
+        }
+
+        .optional {
+            font-weight: normal;
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .send-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(44, 90, 160, 0.4);
+        }
+
+        .send-btn:active {
+            transform: translateY(0);
+        }
+
+        .back-btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border-radius: 4px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+            border: none;
+            margin-top: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(44, 90, 160, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px 20px;
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .compose-content {
+                padding: 20px 15px;
+            }
+
+            .footer {
+                font-size: 0.75rem;
+                padding: 12px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="page-label">New Message</span>
+            <h1>Call5 Democracy</h1>
+
+            <div class="auth-section">
+                <div class="user-info">
+                    <span class="user-email">{{ user_email }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn">Sign Out</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="compose-content">
+            <h2>New Message</h2>
+
+            {% if error %}
+            <div class="error-banner">{{ error }}</div>
+            {% endif %}
+
+            <form class="compose-form" method="POST" action="{{ url_for('messages_compose') }}">
+                <label for="recipient_id">To</label>
+                <select id="recipient_id" name="recipient_id" required>
+                    <option value="">Select recipient...</option>
+                    {% for m in messageable %}
+                    <option value="{{ m.id }}" {% if preselect_id == m.id %}selected{% endif %}>{{ m.name }} ({{ m.relation }})</option>
+                    {% endfor %}
+                </select>
+
+                <label for="subject">Subject <span class="optional">(optional)</span></label>
+                <input type="text" id="subject" name="subject" maxlength="200" placeholder="Enter subject...">
+
+                <label for="body">Message</label>
+                <textarea id="body" name="body" maxlength="2000" placeholder="Write your message..." required></textarea>
+
+                <button type="submit" class="send-btn">Send Message</button>
+            </form>
+
+            <a href="{{ url_for('messages_inbox') }}" class="back-btn">Back to Messages</a>
+        </div>
+
+        <div class="footer">
+            v0.4 | February 2026 | Call 5 Hub and Spoke
+        </div>
+    </div>
+</body>
+</html>
