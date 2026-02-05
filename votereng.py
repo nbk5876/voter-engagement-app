@@ -318,6 +318,65 @@ A copy has been sent to their email address.
         return {"success": False, "error": str(e)}
 
 
+def send_group_broadcast(group, founder, subject, message_body):
+    """Send a broadcast message from a group founder to all group members."""
+    mailgun_api_key = os.getenv("MAILGUN_API_KEY")
+    mailgun_domain = os.getenv("MAILGUN_DOMAIN")
+    mailgun_base_url = os.getenv("MAILGUN_BASE_URL", "https://api.mailgun.net")
+
+    if not mailgun_api_key or not mailgun_domain:
+        return {"sent": 0, "failed": 0, "error": "MailGun credentials not configured"}
+
+    # Get members (exclude founder)
+    members = [m for m in group.members if m.user_id != founder.id]
+    if not members:
+        return {"sent": 0, "failed": 0, "error": "No members to send to"}
+
+    render_url = os.getenv("RENDER_EXTERNAL_URL", "https://voter-engagement-app.onrender.com")
+    group_url = f"{render_url}/groups/{group.id}"
+
+    sent = 0
+    failed = 0
+    for m in members:
+        email_body = f"""Hi {m.user.name},
+
+{founder.name} sent this message to all members of {group.name}:
+
+━━━━━━━━━━━━━━━
+
+{message_body}
+
+━━━━━━━━━━━━━━━
+
+Sent via Call5 Democracy
+View your group: {group_url}
+Reply to this email to contact {founder.name} directly.
+"""
+        try:
+            response = requests.post(
+                f"{mailgun_base_url}/v3/{mailgun_domain}/messages",
+                auth=("api", mailgun_api_key),
+                data={
+                    "from": f"Call5 <noreply@{mailgun_domain}>",
+                    "to": m.user.email,
+                    "cc": founder.email,
+                    "subject": subject,
+                    "text": email_body,
+                    "h:Reply-To": founder.email,
+                }
+            )
+            if response.status_code == 200:
+                sent += 1
+            else:
+                failed += 1
+                print(f"Broadcast to {m.user.email} failed: {response.status_code} {response.text}")
+        except Exception as e:
+            failed += 1
+            print(f"Broadcast to {m.user.email} error: {e}")
+
+    return {"sent": sent, "failed": failed}
+
+
 # --------------------------------------------------
 # Google OAuth Callback
 # --------------------------------------------------
@@ -825,12 +884,21 @@ def group_manage(group_id):
     invitable_recruits = [r for r in user.invitees if r.id not in existing_member_ids]
 
     confirmation = request.args.get("invited")
+    broadcast_confirmation = request.args.get("broadcast_sent")
+    error = request.args.get("error")
+
+    is_founder = group.created_by_user_id == user.id
+    member_count = sum(1 for m in group.members if m.user_id != group.created_by_user_id)
 
     return render_template("group_manage.html",
         user_name=user.name, user_email=user.email,
         group=group, members=members_data,
         invitable_recruits=invitable_recruits,
-        confirmation=confirmation)
+        confirmation=confirmation,
+        broadcast_confirmation=broadcast_confirmation,
+        error=error,
+        is_founder=is_founder,
+        member_count=member_count)
 
 
 # --------------------------------------------------
@@ -881,6 +949,68 @@ def group_invite(group_id):
     db.session.commit()
 
     return redirect(url_for("group_manage", group_id=group_id, invited=recruit.name))
+
+
+# --------------------------------------------------
+# /groups/<id>/broadcast
+# --------------------------------------------------
+@app.route("/groups/<int:group_id>/broadcast", methods=["POST"])
+def group_broadcast(group_id):
+    """Send a broadcast message from the group founder to all members."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    group = db.session.get(Group, group_id)
+    if not group:
+        return redirect(url_for("groups_list"))
+
+    # Only founder can broadcast
+    if group.created_by_user_id != user.id:
+        return redirect(url_for("group_manage", group_id=group_id,
+            error="Only group founders can send broadcast messages."))
+
+    subject = request.form.get("subject", "").strip()
+    message = request.form.get("message", "").strip()
+
+    # Validation
+    if not subject:
+        return redirect(url_for("group_manage", group_id=group_id,
+            error="Subject line is required."))
+    if not message:
+        return redirect(url_for("group_manage", group_id=group_id,
+            error="Message is required."))
+    if len(subject) > 200:
+        return redirect(url_for("group_manage", group_id=group_id,
+            error="Subject must be under 200 characters."))
+    if len(message) > 5000:
+        return redirect(url_for("group_manage", group_id=group_id,
+            error="Message must be under 5000 characters."))
+
+    # Send broadcast
+    result = send_group_broadcast(group, user, subject, message)
+
+    if result.get("error"):
+        return redirect(url_for("group_manage", group_id=group_id,
+            error=result["error"]))
+
+    sent = result["sent"]
+    failed = result["failed"]
+
+    if failed == 0:
+        return redirect(url_for("group_manage", group_id=group_id,
+            broadcast_sent=f"Message sent to {sent} group member{'s' if sent != 1 else ''}! A copy has been sent to your email."))
+    elif sent > 0:
+        return redirect(url_for("group_manage", group_id=group_id,
+            broadcast_sent=f"Message sent to {sent} of {sent + failed} members. Some emails failed."))
+    else:
+        return redirect(url_for("group_manage", group_id=group_id,
+            error="Failed to send message. Please try again."))
 
 
 # --------------------------------------------------
