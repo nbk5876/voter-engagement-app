@@ -22,7 +22,10 @@ import os
 import secrets
 import socket
 import requests  # Added for MailGun API
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import bcrypt
+from email_validator import validate_email, EmailNotValidError
+from flask import flash
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -74,11 +77,11 @@ class VoterSubmission(db.Model):
 
 
 class User(db.Model):
-    """Stores authenticated users from Google OAuth."""
+    """Stores authenticated users from Google OAuth or local email/password."""
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
-    google_id = db.Column(db.String(255), unique=True, nullable=False)
+    google_id = db.Column(db.String(255), unique=True, nullable=True)  # Nullable for local auth
     email = db.Column(db.String(200), nullable=False)
     name = db.Column(db.String(200), nullable=False)
     invite_code = db.Column(db.String(20), unique=True, nullable=False)
@@ -86,7 +89,52 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
+    # Auth fields (v0.4.03)
+    auth_type = db.Column(db.String(20), nullable=False, default='google')  # 'google' or 'local'
+    password_hash = db.Column(db.String(255), nullable=True)  # NULL for Google users
+    email_verified = db.Column(db.Boolean, nullable=False, default=False)
+    verification_token = db.Column(db.String(100), nullable=True)
+    verification_sent_at = db.Column(db.DateTime, nullable=True)
+    reset_token = db.Column(db.String(100), nullable=True)
+    reset_token_expires = db.Column(db.DateTime, nullable=True)
+    failed_login_count = db.Column(db.Integer, nullable=False, default=0)
+    locked_until = db.Column(db.DateTime, nullable=True)
+
     invited_by = db.relationship("User", remote_side=[id], backref="invitees")
+
+    def set_password(self, password):
+        """Hash and store password."""
+        self.password_hash = bcrypt.hashpw(
+            password.encode('utf-8'),
+            bcrypt.gensalt(rounds=12)
+        ).decode('utf-8')
+
+    def check_password(self, password):
+        """Verify password against stored hash."""
+        if not self.password_hash:
+            return False
+        return bcrypt.checkpw(
+            password.encode('utf-8'),
+            self.password_hash.encode('utf-8')
+        )
+
+    def is_locked(self):
+        """Check if account is locked due to failed attempts."""
+        if not self.locked_until:
+            return False
+        return datetime.now(timezone.utc) < self.locked_until
+
+    def generate_verification_token(self):
+        """Generate and store email verification token."""
+        self.verification_token = secrets.token_urlsafe(32)
+        self.verification_sent_at = datetime.now(timezone.utc)
+        return self.verification_token
+
+    def generate_reset_token(self):
+        """Generate and store password reset token."""
+        self.reset_token = secrets.token_urlsafe(32)
+        self.reset_token_expires = datetime.now(timezone.utc) + timedelta(hours=1)
+        return self.reset_token
 
 
 class Group(db.Model):
@@ -136,6 +184,17 @@ class Message(db.Model):
     recipient = db.relationship("User", foreign_keys=[recipient_user_id], backref="messages_received")
 
 
+class LoginAttempt(db.Model):
+    """Tracks login attempts for rate limiting and security monitoring."""
+    __tablename__ = "login_attempts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(200), nullable=False)
+    ip_address = db.Column(db.String(45), nullable=False)  # IPv4 or IPv6
+    success = db.Column(db.Boolean, nullable=False)
+    attempted_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 # Create tables if they don't exist
 with app.app_context():
     db.create_all()
@@ -148,6 +207,187 @@ def generate_invite_code():
         if not User.query.filter_by(invite_code=code).first():
             return code
     raise RuntimeError("Failed to generate unique invite code after 10 attempts")
+
+
+# --------------------------------------------------
+# Authentication Helper Functions (v0.4.03)
+# --------------------------------------------------
+def validate_password_strength(password):
+    """
+    Validate password meets security requirements.
+    Returns (bool, str) - (is_valid, error_message)
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters"
+    if len(password) > 100:
+        return False, "Password must be less than 100 characters"
+    if not any(c.isupper() for c in password):
+        return False, "Password must contain at least one uppercase letter"
+    if not any(c.islower() for c in password):
+        return False, "Password must contain at least one lowercase letter"
+    if not any(c.isdigit() for c in password):
+        return False, "Password must contain at least one number"
+
+    # Check against common passwords
+    common_passwords = ['password', 'password123', '12345678', 'qwerty123']
+    if password.lower() in common_passwords:
+        return False, "Password is too common"
+
+    return True, ""
+
+
+def validate_email_format(email):
+    """
+    Validate email address format.
+    Returns (bool, str) - (is_valid, normalized_email_or_error)
+    """
+    try:
+        validated = validate_email(email, check_deliverability=False)
+        return True, validated.email
+    except EmailNotValidError as e:
+        return False, str(e)
+
+
+def log_login_attempt(email, ip_address, success):
+    """Log login attempt for security monitoring."""
+    attempt = LoginAttempt(
+        email=email.lower(),
+        ip_address=ip_address,
+        success=success
+    )
+    db.session.add(attempt)
+    db.session.commit()
+
+
+def check_rate_limit(email, ip_address):
+    """
+    Check if login attempts exceed rate limits.
+    Returns (bool, str) - (allowed, error_message)
+    """
+    now = datetime.now(timezone.utc)
+    fifteen_min_ago = now - timedelta(minutes=15)
+    one_hour_ago = now - timedelta(hours=1)
+
+    # Check email-based limit (5 attempts per 15 minutes)
+    email_attempts = LoginAttempt.query.filter(
+        LoginAttempt.email == email.lower(),
+        LoginAttempt.success == False,
+        LoginAttempt.attempted_at >= fifteen_min_ago
+    ).count()
+
+    if email_attempts >= 5:
+        return False, "Too many failed login attempts. Try again in 15 minutes."
+
+    # Check IP-based limit (20 attempts per hour)
+    ip_attempts = LoginAttempt.query.filter(
+        LoginAttempt.ip_address == ip_address,
+        LoginAttempt.attempted_at >= one_hour_ago
+    ).count()
+
+    if ip_attempts >= 20:
+        return False, "Too many login attempts from this location. Try again later."
+
+    return True, ""
+
+
+def send_verification_email(user):
+    """Send email verification link."""
+    token = user.generate_verification_token()
+    db.session.commit()
+
+    # Use RENDER_EXTERNAL_URL if available, otherwise localhost for dev
+    base_url = os.getenv("RENDER_EXTERNAL_URL", "http://localhost:5000")
+    verify_url = f"{base_url}/verify-email?token={token}"
+
+    mailgun_api_key = os.getenv("MAILGUN_API_KEY")
+    mailgun_domain = os.getenv("MAILGUN_DOMAIN")
+    mailgun_base_url = os.getenv("MAILGUN_BASE_URL", "https://api.mailgun.net")
+
+    if not mailgun_api_key or not mailgun_domain:
+        return {"success": False, "error": "MailGun credentials not configured"}
+
+    email_body = f"""Welcome to Call5 Democracy, {user.name}!
+
+Please verify your email address by clicking the link below:
+
+{verify_url}
+
+This link will expire in 24 hours.
+
+If you didn't create an account, please ignore this email.
+
+━━━━━━━━━━━━━━━
+Call5 Democracy
+Building sustained civic engagement
+"""
+
+    try:
+        response = requests.post(
+            f"{mailgun_base_url}/v3/{mailgun_domain}/messages",
+            auth=("api", mailgun_api_key),
+            data={
+                "from": f"Call5 <noreply@{mailgun_domain}>",
+                "to": user.email,
+                "subject": "Verify your Call5 Democracy account",
+                "text": email_body,
+            }
+        )
+        if response.status_code == 200:
+            return {"success": True}
+        else:
+            return {"success": False, "error": f"MailGun error: {response.status_code}"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+def send_password_reset_email(user):
+    """Send password reset link."""
+    token = user.generate_reset_token()
+    db.session.commit()
+
+    base_url = os.getenv("RENDER_EXTERNAL_URL", "http://localhost:5000")
+    reset_url = f"{base_url}/reset-password?token={token}"
+
+    mailgun_api_key = os.getenv("MAILGUN_API_KEY")
+    mailgun_domain = os.getenv("MAILGUN_DOMAIN")
+    mailgun_base_url = os.getenv("MAILGUN_BASE_URL", "https://api.mailgun.net")
+
+    if not mailgun_api_key or not mailgun_domain:
+        return {"success": False, "error": "MailGun credentials not configured"}
+
+    email_body = f"""Hi {user.name},
+
+You requested a password reset for your Call5 Democracy account.
+
+Click the link below to reset your password:
+
+{reset_url}
+
+This link will expire in 1 hour.
+
+If you didn't request this reset, please ignore this email. Your password will remain unchanged.
+
+━━━━━━━━━━━━━━━
+Call5 Democracy
+"""
+
+    try:
+        response = requests.post(
+            f"{mailgun_base_url}/v3/{mailgun_domain}/messages",
+            auth=("api", mailgun_api_key),
+            data={
+                "from": f"Call5 <noreply@{mailgun_domain}>",
+                "to": user.email,
+                "subject": "Reset your Call5 Democracy password",
+                "text": email_body,
+            }
+        )
+        if response.status_code == 200:
+            return {"success": True}
+        else:
+            return {"success": False, "error": f"MailGun error: {response.status_code}"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 # Initialize OpenAI client
@@ -536,6 +776,317 @@ def logout():
     """Clear session and log user out."""
     session.clear()
     return redirect(url_for("index"))
+
+
+# --------------------------------------------------
+# Local Authentication Routes (v0.4.03)
+# --------------------------------------------------
+@app.route("/signup")
+def signup_page():
+    """Show signup form."""
+    if session.get("user_id"):
+        return redirect(url_for("dashboard"))
+    return render_template("signup.html")
+
+
+@app.route("/signup", methods=["POST"])
+def signup():
+    """Handle signup form submission."""
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+    confirm_password = request.form.get("confirm_password", "")
+    name = request.form.get("name", "").strip()
+
+    # Validate inputs
+    if not all([email, password, confirm_password, name]):
+        flash("All fields are required", "error")
+        return redirect(url_for("signup_page"))
+
+    if password != confirm_password:
+        flash("Passwords do not match", "error")
+        return redirect(url_for("signup_page"))
+
+    # Validate email format
+    email_valid, email_or_error = validate_email_format(email)
+    if not email_valid:
+        flash(f"Invalid email: {email_or_error}", "error")
+        return redirect(url_for("signup_page"))
+    email = email_or_error  # Use normalized email
+
+    # Validate password strength
+    password_valid, password_error = validate_password_strength(password)
+    if not password_valid:
+        flash(password_error, "error")
+        return redirect(url_for("signup_page"))
+
+    # Check if email already registered
+    existing_user = User.query.filter(
+        db.func.lower(User.email) == email.lower()
+    ).first()
+    if existing_user:
+        flash("Email already registered. Please log in.", "error")
+        return redirect(url_for("login_page"))
+
+    # Get referral code if present
+    ref_code = session.pop("ref_code", None)
+    referrer = None
+    if ref_code:
+        referrer = User.query.filter_by(invite_code=ref_code).first()
+
+    # Create user
+    user = User(
+        email=email,
+        name=name,
+        auth_type='local',
+        email_verified=False,
+        invite_code=generate_invite_code(),
+        invited_by_user_id=referrer.id if referrer else None
+    )
+    user.set_password(password)
+
+    db.session.add(user)
+    db.session.commit()
+
+    # Send verification email
+    send_verification_email(user)
+
+    flash("Account created! Please check your email to verify your account.", "success")
+    return redirect(url_for("login_page"))
+
+
+@app.route("/login")
+def login_page():
+    """Show login form."""
+    if session.get("user_id"):
+        return redirect(url_for("dashboard"))
+    return render_template("login.html")
+
+
+@app.route("/login", methods=["POST"])
+def login():
+    """Handle login form submission."""
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+
+    if not all([email, password]):
+        flash("Email and password are required", "error")
+        return redirect(url_for("login_page"))
+
+    # Get user's IP for rate limiting
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip_address and ',' in ip_address:
+        ip_address = ip_address.split(',')[0].strip()
+
+    # Check rate limits
+    allowed, rate_limit_msg = check_rate_limit(email, ip_address)
+    if not allowed:
+        flash(rate_limit_msg, "error")
+        return redirect(url_for("login_page"))
+
+    # Look up user
+    user = User.query.filter(
+        db.func.lower(User.email) == email.lower()
+    ).first()
+
+    if not user or user.auth_type != 'local':
+        log_login_attempt(email, ip_address, False)
+        flash("Invalid email or password", "error")
+        return redirect(url_for("login_page"))
+
+    # Check if account is locked
+    if user.is_locked():
+        time_remaining = (user.locked_until - datetime.now(timezone.utc)).total_seconds() / 60
+        flash(f"Account locked for {int(time_remaining)} more minutes due to failed login attempts", "error")
+        return redirect(url_for("login_page"))
+
+    # Check if email is verified
+    if not user.email_verified:
+        flash("Please verify your email before logging in. Check your inbox or resend verification.", "error")
+        return redirect(url_for("resend_verification_page"))
+
+    # Verify password
+    if not user.check_password(password):
+        user.failed_login_count += 1
+        if user.failed_login_count >= 5:
+            user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=30)
+            flash("Account locked for 30 minutes due to multiple failed login attempts", "error")
+        else:
+            flash("Invalid email or password", "error")
+
+        db.session.commit()
+        log_login_attempt(email, ip_address, False)
+        return redirect(url_for("login_page"))
+
+    # Successful login
+    user.failed_login_count = 0
+    user.locked_until = None
+    db.session.commit()
+
+    log_login_attempt(email, ip_address, True)
+
+    # Create session
+    session["user_id"] = user.id
+    session["user_email"] = user.email
+    session["user_name"] = user.name
+
+    flash(f"Welcome back, {user.name}!", "success")
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/verify-email")
+def verify_email():
+    """Handle email verification link."""
+    token = request.args.get("token")
+    if not token:
+        flash("Invalid verification link", "error")
+        return redirect(url_for("index"))
+
+    user = User.query.filter_by(verification_token=token).first()
+
+    if not user:
+        flash("Invalid or expired verification link", "error")
+        return redirect(url_for("index"))
+
+    # Check if token is expired (24 hours)
+    if user.verification_sent_at:
+        age = datetime.now(timezone.utc) - user.verification_sent_at.replace(tzinfo=timezone.utc)
+        if age > timedelta(hours=24):
+            flash("Verification link expired. Please request a new one.", "error")
+            return redirect(url_for("resend_verification_page"))
+
+    # Verify email
+    user.email_verified = True
+    user.verification_token = None
+    user.verification_sent_at = None
+    db.session.commit()
+
+    flash("Email verified successfully! Please log in.", "success")
+    return redirect(url_for("login_page"))
+
+
+@app.route("/resend-verification")
+def resend_verification_page():
+    """Show resend verification form."""
+    return render_template("resend_verification.html")
+
+
+@app.route("/resend-verification", methods=["POST"])
+def resend_verification():
+    """Handle resend verification request."""
+    email = request.form.get("email", "").strip().lower()
+
+    if not email:
+        flash("Email address is required", "error")
+        return redirect(url_for("resend_verification_page"))
+
+    user = User.query.filter(
+        db.func.lower(User.email) == email.lower()
+    ).first()
+
+    # Always show success message (prevent email enumeration)
+    flash("If that email is registered and unverified, we've sent a new verification link.", "success")
+
+    if user and not user.email_verified and user.auth_type == 'local':
+        send_verification_email(user)
+
+    return redirect(url_for("login_page"))
+
+
+@app.route("/forgot-password")
+def forgot_password_page():
+    """Show forgot password form."""
+    return render_template("forgot_password.html")
+
+
+@app.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    """Handle forgot password request."""
+    email = request.form.get("email", "").strip().lower()
+
+    if not email:
+        flash("Email address is required", "error")
+        return redirect(url_for("forgot_password_page"))
+
+    # Always show success message (prevent email enumeration)
+    flash("If that email is registered, you'll receive a password reset link.", "success")
+
+    user = User.query.filter(
+        db.func.lower(User.email) == email.lower(),
+        User.auth_type == 'local'
+    ).first()
+
+    if user:
+        send_password_reset_email(user)
+
+    return redirect(url_for("login_page"))
+
+
+@app.route("/reset-password")
+def reset_password_page():
+    """Show reset password form."""
+    token = request.args.get("token")
+    if not token:
+        flash("Invalid reset link", "error")
+        return redirect(url_for("login_page"))
+
+    user = User.query.filter_by(reset_token=token).first()
+
+    if not user:
+        flash("Invalid or expired reset link", "error")
+        return redirect(url_for("forgot_password_page"))
+
+    if user.reset_token_expires:
+        expires = user.reset_token_expires.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > expires:
+            flash("Reset link expired. Please request a new one.", "error")
+            return redirect(url_for("forgot_password_page"))
+
+    return render_template("reset_password.html", token=token)
+
+
+@app.route("/reset-password", methods=["POST"])
+def reset_password():
+    """Handle password reset submission."""
+    token = request.form.get("token")
+    password = request.form.get("password", "")
+    confirm_password = request.form.get("confirm_password", "")
+
+    if not all([token, password, confirm_password]):
+        flash("All fields are required", "error")
+        return redirect(url_for("reset_password_page") + f"?token={token}")
+
+    if password != confirm_password:
+        flash("Passwords do not match", "error")
+        return redirect(url_for("reset_password_page") + f"?token={token}")
+
+    # Validate password strength
+    password_valid, password_error = validate_password_strength(password)
+    if not password_valid:
+        flash(password_error, "error")
+        return redirect(url_for("reset_password_page") + f"?token={token}")
+
+    user = User.query.filter_by(reset_token=token).first()
+
+    if not user:
+        flash("Invalid reset link", "error")
+        return redirect(url_for("forgot_password_page"))
+
+    if user.reset_token_expires:
+        expires = user.reset_token_expires.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > expires:
+            flash("Reset link expired", "error")
+            return redirect(url_for("forgot_password_page"))
+
+    # Update password
+    user.set_password(password)
+    user.reset_token = None
+    user.reset_token_expires = None
+    user.failed_login_count = 0
+    user.locked_until = None
+    db.session.commit()
+
+    flash("Password updated successfully! Please log in.", "success")
+    return redirect(url_for("login_page"))
 
 
 # --------------------------------------------------
