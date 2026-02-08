@@ -291,12 +291,15 @@
                 <div class="legend-item">
                     <strong>📏 Box Size:</strong> Larger = more recruits
                 </div>
+                <div class="legend-item">
+                    <strong>🎨 Box Color:</strong> Shows group membership
+                </div>
             </div>
         </div>
 
         <!-- Footer -->
         <footer>
-            v0.4.05 | February 2026 | Call 5 Hub and Spoke
+            v0.4.05a | February 2026 | Call 5 Hub and Spoke
         </footer>
     </div>
 
@@ -330,10 +333,10 @@
             layout: {
                 hierarchical: {
                     enabled: true,
-                    direction: 'UD',        // Up-Down (top to bottom)
+                    direction: 'LR',        // Left-Right (matches Visio diagram)
                     sortMethod: 'directed',  // Follow edge direction
-                    levelSeparation: 150,    // Vertical spacing
-                    nodeSpacing: 200,        // Horizontal spacing
+                    levelSeparation: 200,    // Horizontal spacing between levels
+                    nodeSpacing: 150,        // Vertical spacing between nodes
                     treeSpacing: 250,        // Space between separate trees
                     blockShifting: true,
                     edgeMinimization: true,
@@ -383,7 +386,7 @@
                 smooth: {
                     enabled: true,
                     type: 'cubicBezier',
-                    forceDirection: 'vertical',
+                    forceDirection: 'horizontal',
                     roundness: 0.4
                 }
             },

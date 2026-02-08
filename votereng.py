@@ -1263,7 +1263,7 @@ def admin_network():
 @app.route("/admin/network-graph")
 def network_graph():
     """
-    Visual network graph showing recruitment relationships
+    Visual network graph showing recruitment relationships with group labels
     Uses vis.js for interactive tree visualization
     """
     user_id = session.get("user_id")
@@ -1278,20 +1278,58 @@ def network_graph():
     # Query all users and their relationships
     users = User.query.all()
 
+    # Query groups for each user
+    # Format: {user_id: ['Group 1', 'Group 2'], ...}
+    user_groups = {}
+    try:
+        # Get all group memberships
+        group_memberships = db.session.query(
+            GroupMember.user_id,
+            Group.name
+        ).join(Group, GroupMember.group_id == Group.id).all()
+
+        for user_id, group_name in group_memberships:
+            if user_id not in user_groups:
+                user_groups[user_id] = []
+            user_groups[user_id].append(group_name)
+    except:
+        # If Group/GroupMember models don't exist yet, continue without groups
+        pass
+
     # Build nodes and edges for vis.js
     nodes = []
     edges = []
+
+    # Define group colors
+    group_colors = {
+        0: {'background': '#D2E5FF', 'border': '#2B7CE9'},  # Default - blue
+        1: {'background': '#FFE5B4', 'border': '#FF8C00'},  # Orange
+        2: {'background': '#C8E6C9', 'border': '#4CAF50'},  # Green
+        3: {'background': '#F8BBD0', 'border': '#E91E63'},  # Pink
+        4: {'background': '#FFECB3', 'border': '#FFC107'},  # Yellow
+    }
 
     for u in users:
         # Get recruit count
         recruit_count = len(u.invitees) if hasattr(u, 'invitees') else 0
 
+        # Get user's groups
+        groups = user_groups.get(u.id, [])
+        group_label = f"\n[{', '.join(groups)}]" if groups else ""
+
+        # Assign color based on first group (or default)
+        color_idx = 0
+        if groups:
+            # Use hash of group name for consistent coloring
+            color_idx = (hash(groups[0]) % 4) + 1
+
         # Create node
         nodes.append({
             'id': u.id,
-            'label': f"{u.name}\n({recruit_count} recruits)",
-            'title': u.email,  # Shows on hover
-            'shape': 'box'
+            'label': f"{u.name}\n({recruit_count} recruits){group_label}",
+            'title': f"{u.email}\nGroups: {', '.join(groups) if groups else 'None'}",
+            'shape': 'box',
+            'color': group_colors[color_idx]
         })
 
         # Create edge if user has a recruiter
