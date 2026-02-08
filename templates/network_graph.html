@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Graph - Call5 Democracy</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        /* CSS Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 {
+            color: #1e3c72;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .user-email {
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2a5298;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        /* Graph Container */
+        .graph-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        /* View Tabs */
+        .view-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            text-align: center;
+            text-decoration: none;
+            color: #555;
+            background: #f8f9fa;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .tab-btn:hover {
+            background: #e9ecef;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #1e3c72;
+            font-weight: 600;
+            border-bottom: 3px solid #1e3c72;
+            margin-bottom: -2px;
+        }
+
+        .graph-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .graph-header h2 {
+            color: #1e3c72;
+            font-size: 1.5rem;
+        }
+
+        .graph-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #e0e0e0;
+        }
+
+        #network-container {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        /* Legend */
+        .legend {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .legend h3 {
+            color: #1e3c72;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .legend-box {
+            width: 30px;
+            height: 20px;
+            border: 2px solid #333;
+            border-radius: 3px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.4rem;
+            }
+
+            header {
+                padding: 15px 20px;
+            }
+
+            #network-container {
+                height: 400px;
+            }
+
+            .graph-controls {
+                width: 100%;
+            }
+
+            .control-btn {
+                flex: 1;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>Call5 Democracy - Network Graph</h1>
+            <div class="auth-section">
+                <span class="user-email">{{ user_email }}</span>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">Sign Out</a>
+            </div>
+        </header>
+
+        <!-- Graph Card -->
+        <div class="graph-card">
+            <!-- View Tabs -->
+            <div class="view-tabs">
+                <a href="{{ url_for('admin_network') }}" class="tab-btn">
+                    📋 Text View
+                </a>
+                <a href="{{ url_for('network_graph') }}" class="tab-btn active">
+                    🌳 Graph View
+                </a>
+            </div>
+
+            <div class="graph-header">
+                <h2>Recruitment Network</h2>
+                <div class="graph-controls">
+                    <button class="control-btn" onclick="fitNetwork()">Fit to Screen</button>
+                    <button class="control-btn" onclick="togglePhysics()">Toggle Physics</button>
+                    <button class="control-btn" onclick="exportImage()">Export Image</button>
+                </div>
+            </div>
+
+            <div id="network-container"></div>
+
+            <!-- Legend -->
+            <div class="legend">
+                <h3>How to Use</h3>
+                <div class="legend-item">
+                    <strong>🖱️ Click & Drag:</strong> Move nodes around
+                </div>
+                <div class="legend-item">
+                    <strong>🔍 Scroll:</strong> Zoom in/out
+                </div>
+                <div class="legend-item">
+                    <strong>👆 Click Node:</strong> View member details
+                </div>
+                <div class="legend-item">
+                    <strong>📏 Box Size:</strong> Larger = more recruits
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            v0.4.05 | February 2026 | Call 5 Hub and Spoke
+        </footer>
+    </div>
+
+    <script>
+        // Parse data from Flask
+        const nodesData = {{ nodes | safe }};
+        const edgesData = {{ edges | safe }};
+
+        // Calculate node sizes based on recruit count
+        nodesData.forEach(node => {
+            const recruitCount = parseInt(node.label.match(/\((\d+) recruit/)?.[1] || 0);
+            // Base size 25, add 5 per recruit, max 60
+            node.size = Math.min(25 + (recruitCount * 5), 60);
+        });
+
+        // Create nodes and edges datasets
+        const nodes = new vis.DataSet(nodesData);
+        const edges = new vis.DataSet(edgesData);
+
+        // Container
+        const container = document.getElementById('network-container');
+
+        // Data
+        const data = {
+            nodes: nodes,
+            edges: edges
+        };
+
+        // Configuration options
+        const options = {
+            layout: {
+                hierarchical: {
+                    enabled: true,
+                    direction: 'UD',        // Up-Down (top to bottom)
+                    sortMethod: 'directed',  // Follow edge direction
+                    levelSeparation: 150,    // Vertical spacing
+                    nodeSpacing: 200,        // Horizontal spacing
+                    treeSpacing: 250,        // Space between separate trees
+                    blockShifting: true,
+                    edgeMinimization: true,
+                    parentCentralization: true
+                }
+            },
+            physics: {
+                enabled: false,  // Disable after initial layout
+                hierarchicalRepulsion: {
+                    nodeDistance: 150
+                }
+            },
+            nodes: {
+                shape: 'box',
+                margin: 10,
+                widthConstraint: {
+                    minimum: 120,
+                    maximum: 200
+                },
+                font: {
+                    size: 14,
+                    face: 'Arial'
+                },
+                color: {
+                    border: '#2B7CE9',
+                    background: '#D2E5FF',
+                    highlight: {
+                        border: '#1e3c72',
+                        background: '#b3d9ff'
+                    }
+                },
+                borderWidth: 2,
+                borderWidthSelected: 3
+            },
+            edges: {
+                arrows: {
+                    to: {
+                        enabled: true,
+                        scaleFactor: 0.8
+                    }
+                },
+                color: {
+                    color: '#848484',
+                    highlight: '#1e3c72'
+                },
+                width: 2,
+                smooth: {
+                    enabled: true,
+                    type: 'cubicBezier',
+                    forceDirection: 'vertical',
+                    roundness: 0.4
+                }
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 200,
+                zoomView: true,
+                dragView: true,
+                navigationButtons: true,
+                keyboard: {
+                    enabled: true
+                }
+            }
+        };
+
+        // Initialize network
+        const network = new vis.Network(container, data, options);
+
+        // Event listeners
+        network.on('click', function(params) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                const node = nodes.get(nodeId);
+                alert(`Member: ${node.label}\nEmail: ${node.title}`);
+            }
+        });
+
+        // Fit network after stabilization
+        network.once('stabilizationIterationsDone', function() {
+            network.fit({
+                animation: {
+                    duration: 1000,
+                    easingFunction: 'easeInOutQuad'
+                }
+            });
+        });
+
+        // Control functions
+        let physicsEnabled = false;
+
+        function fitNetwork() {
+            network.fit({
+                animation: {
+                    duration: 500,
+                    easingFunction: 'easeInOutQuad'
+                }
+            });
+        }
+
+        function togglePhysics() {
+            physicsEnabled = !physicsEnabled;
+            network.setOptions({
+                physics: {
+                    enabled: physicsEnabled
+                }
+            });
+        }
+
+        function exportImage() {
+            // Get canvas from vis.js network
+            const canvas = document.querySelector('#network-container canvas');
+            if (canvas) {
+                // Create download link
+                const link = document.createElement('a');
+                link.download = 'call5-network-graph.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+        }
+
+        // Mobile touch optimization
+        if ('ontouchstart' in window) {
+            network.setOptions({
+                interaction: {
+                    dragView: true,
+                    zoomView: true,
+                    navigationButtons: true
+                }
+            });
+        }
+    </script>
+</body>
+</html>

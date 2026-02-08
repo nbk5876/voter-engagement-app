@@ -18,6 +18,7 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 from flask_dance.contrib.google import make_google_blueprint, google
+import json
 import os
 import secrets
 import socket
@@ -1257,6 +1258,54 @@ def admin_network():
     return render_template("admin_network.html",
         user_name=user.name, user_email=user.email,
         tree_nodes=tree_nodes, user_count=len(tree_nodes))
+
+
+@app.route("/admin/network-graph")
+def network_graph():
+    """
+    Visual network graph showing recruitment relationships
+    Uses vis.js for interactive tree visualization
+    """
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    # Query all users and their relationships
+    users = User.query.all()
+
+    # Build nodes and edges for vis.js
+    nodes = []
+    edges = []
+
+    for u in users:
+        # Get recruit count
+        recruit_count = len(u.invitees) if hasattr(u, 'invitees') else 0
+
+        # Create node
+        nodes.append({
+            'id': u.id,
+            'label': f"{u.name}\n({recruit_count} recruits)",
+            'title': u.email,  # Shows on hover
+            'shape': 'box'
+        })
+
+        # Create edge if user has a recruiter
+        if u.invited_by_user_id:
+            edges.append({
+                'from': u.invited_by_user_id,
+                'to': u.id
+            })
+
+    return render_template("network_graph.html",
+                         user_name=user.name,
+                         user_email=user.email,
+                         nodes=json.dumps(nodes),
+                         edges=json.dumps(edges))
 
 
 # --------------------------------------------------

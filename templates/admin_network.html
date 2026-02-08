@@ -138,6 +138,48 @@
             color: #999;
         }
 
+        /* View Tabs */
+        .view-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            text-align: center;
+            text-decoration: none;
+            color: #555;
+            background: #f8f9fa;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .tab-btn:hover {
+            background: #e9ecef;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #1e3c72;
+            font-weight: 600;
+            border-bottom: 3px solid #1e3c72;
+            margin-bottom: -2px;
+        }
+
+        @media (max-width: 768px) {
+            .tab-btn {
+                padding: 10px 15px;
+                font-size: 0.85rem;
+            }
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 10px;
@@ -173,7 +215,15 @@
         </div>
 
         <div class="admin-content">
-            <h2>Network Tree</h2>
+            <!-- View Tabs -->
+            <div class="view-tabs">
+                <a href="{{ url_for('admin_network') }}" class="tab-btn active">
+                    📋 Text View
+                </a>
+                <a href="{{ url_for('network_graph') }}" class="tab-btn">
+                    🌳 Graph View
+                </a>
+            </div>
 
             <div class="tree-container">
                 {% for node in tree_nodes %}
