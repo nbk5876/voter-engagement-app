@@ -46,6 +46,12 @@ CANDIDATES: Dict[str, CandidatePersonality] = {
         context_file="moddem.txt",
     ),
 
+    "cla": CandidatePersonality(
+        key="cla",
+        display_name="David Clayton",
+        context_file="clayton.txt",
+    ),
+
 }
 
 DEFAULT_CANDIDATE_KEY = "mod"
