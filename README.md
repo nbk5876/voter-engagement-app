@@ -1,8 +1,8 @@
 # Call5 Democracy
 
-A civic engagement platform that sustains voter participation beyond traditional election cycles through an exponential "Call-5" network model. Users can ask questions to AI-powered candidate personalities and recruit others to join their network.
+A civic engagement platform intended to sustain voter participation beyond traditional election cycles through an exponential "Call-5" network model. Users can ask questions to candidates or an AI-powered candidate personality and recruit others to join their network.
 
-**Version:** v0.3.1
+**Version:** v0.4.06
 **Live Site:** https://voter-engagement-app.onrender.com
 
 ## Features
@@ -47,7 +47,8 @@ A civic engagement platform that sustains voter participation beyond traditional
 | `/share` | Multi-platform invite sharing |
 | `/message-recruiter` | Send message to recruiter |
 | `/admin` | Admin user report (admin only) |
-| `/admin/network` | Network tree visualization (admin only) |
+| `/admin/network` | Network tree visualization |
+| `/admin/network-graph` | Interactive network graph (vis.js) |
 | `/respond` | POST endpoint for AI response generation |
 | `/docs/use-cases` | Use cases documentation |
 | `/docs/concepts` | Call 5 People concepts |
@@ -117,6 +118,7 @@ Select via `?ca=` query parameter:
 | `saw` | Kshama Sawant | Socialist |
 | `cha` | Melissa Chaudhry | Anti-war constitutionalist |
 | `tur` | Jack Turner | Hard-right conservative (fictional) |
+| `cla` | David Clayton | Veteran advocate, NC District 5 |
 
 ## Deployment
 

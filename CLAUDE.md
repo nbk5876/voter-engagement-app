@@ -88,6 +88,8 @@ See `docs/Call5_v0.3_Use_Cases_Integrated.md` for complete documentation.
 - **v1.2** ✓ — PostgreSQL database (local + Render), Google OAuth authentication
 - **v0.3** — Call 5 Hub and Spoke: Use Cases, Full DB Design
 - **v0.4** — Expand schema for ENH-001 through ENH-005
+- **v0.4.05** ✓ — Interactive network graph visualization (vis.js, tabbed interface, group labels)
+- **v0.4.06** ✓ — Load Template button, privacy-enhanced headers, role-based admin UI
 
 ## Future Enhancements (v0.4+)
 - **ENH-001**: Group Leaders as news/event channels
