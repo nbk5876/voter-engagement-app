@@ -196,6 +196,20 @@ class LoginAttempt(db.Model):
     attempted_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class Broadcast(db.Model):
+    __tablename__ = "broadcasts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    sender_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    subject = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    recipient_count = db.Column(db.Integer, nullable=False)
+    sent_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationship
+    sender = db.relationship("User", backref="broadcasts_sent")
+
+
 # Create tables if they don't exist
 with app.app_context():
     db.create_all()
@@ -1344,6 +1358,184 @@ def network_graph():
                          user_email=user.email,
                          nodes=json.dumps(nodes),
                          edges=json.dumps(edges))
+
+
+# --------------------------------------------------
+# /admin/broadcast
+# --------------------------------------------------
+@app.route("/admin/broadcast", methods=["GET", "POST"])
+def admin_broadcast():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    # Super-admin check: only specific emails
+    AUTHORIZED_BROADCASTERS = ['tony.byorick@gmail.com', 'maxatisd@gmail.com']
+    if user.email not in AUTHORIZED_BROADCASTERS:
+        flash("Access denied. Broadcast privileges required.", "error")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "GET":
+        # Check rate limit
+        last_broadcast = session.get("last_broadcast_time")
+        cooldown_remaining = None
+
+        if last_broadcast:
+            last_time = datetime.fromisoformat(last_broadcast)
+            elapsed = datetime.now(timezone.utc) - last_time
+            cooldown_seconds = 3600  # 1 hour
+
+            if elapsed.total_seconds() < cooldown_seconds:
+                cooldown_remaining = cooldown_seconds - int(elapsed.total_seconds())
+
+        return render_template("admin_broadcast.html",
+            user_name=user.name,
+            user_email=user.email,
+            cooldown_remaining=cooldown_remaining
+        )
+
+    # POST: Send broadcast
+    subject = request.form.get("subject", "").strip()
+    message = request.form.get("message", "").strip()
+
+    if not subject or not message:
+        flash("Subject and message are required.", "error")
+        return render_template("admin_broadcast.html",
+            user_name=user.name,
+            user_email=user.email
+        )
+
+    # Rate limit check
+    last_broadcast = session.get("last_broadcast_time")
+    if last_broadcast:
+        last_time = datetime.fromisoformat(last_broadcast)
+        elapsed = datetime.now(timezone.utc) - last_time
+
+        if elapsed.total_seconds() < 3600:  # 1 hour cooldown
+            remaining = 3600 - int(elapsed.total_seconds())
+            minutes = remaining // 60
+            flash(f"Rate limit: Please wait {minutes} more minutes before next broadcast.", "error")
+            return render_template("admin_broadcast.html",
+                user_name=user.name,
+                user_email=user.email,
+                cooldown_remaining=remaining
+            )
+
+    # Get all registered users
+    all_users = User.query.all()
+    recipient_emails = [u.email for u in all_users if u.email]
+
+    # Send via MailGun
+    mailgun_api_key = os.getenv("MAILGUN_API_KEY")
+    mailgun_domain = os.getenv("MAILGUN_DOMAIN")
+    mailgun_base_url = os.getenv("MAILGUN_BASE_URL", "https://api.mailgun.net")
+
+    if not mailgun_api_key or not mailgun_domain:
+        flash("MailGun credentials not configured.", "error")
+        return render_template("admin_broadcast.html",
+            user_name=user.name,
+            user_email=user.email
+        )
+
+    sent_count = 0
+    failed_emails = []
+
+    try:
+        for email in recipient_emails:
+            response = requests.post(
+                f"{mailgun_base_url}/v3/{mailgun_domain}/messages",
+                auth=("api", mailgun_api_key),
+                data={
+                    "from": f"Call5 Democracy <noreply@{mailgun_domain}>",
+                    "to": email,
+                    "subject": subject,
+                    "text": message,
+                    "h:Reply-To": "tony.byorick@gmail.com",
+                    "o:tag": "broadcast"
+                }
+            )
+
+            if response.status_code == 200:
+                sent_count += 1
+            else:
+                failed_emails.append(email)
+
+        # Log to database
+        broadcast_record = Broadcast(
+            sender_user_id=user.id,
+            subject=subject,
+            message=message,
+            recipient_count=sent_count
+        )
+        db.session.add(broadcast_record)
+        db.session.commit()
+
+        # Update rate limit
+        session["last_broadcast_time"] = datetime.now(timezone.utc).isoformat()
+
+        # Success message
+        if failed_emails:
+            flash(f"Broadcast sent to {sent_count} members. {len(failed_emails)} failed.", "warning")
+        else:
+            flash(f"Broadcast sent to {sent_count} members!", "success")
+
+        return render_template("admin_broadcast.html",
+            user_name=user.name,
+            user_email=user.email,
+            sent=True,
+            recipient_count=sent_count,
+            recipients=recipient_emails,
+            failed_recipients=failed_emails if failed_emails else None
+        )
+
+    except Exception as e:
+        flash(f"Error sending broadcast: {str(e)}", "error")
+        return render_template("admin_broadcast.html",
+            user_name=user.name,
+            user_email=user.email
+        )
+
+
+@app.route("/admin/broadcast/history")
+def admin_broadcast_history():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("index"))
+
+    # Super-admin check
+    AUTHORIZED_BROADCASTERS = ['tony.byorick@gmail.com', 'maxatisd@gmail.com']
+    if user.email not in AUTHORIZED_BROADCASTERS:
+        flash("Access denied. Broadcast privileges required.", "error")
+        return redirect(url_for("dashboard"))
+
+    # Get broadcast history
+    broadcasts = db.session.query(
+        Broadcast.id,
+        Broadcast.subject,
+        Broadcast.message,
+        Broadcast.recipient_count,
+        Broadcast.sent_at,
+        User.name.label("sender_name")
+    ).join(User, Broadcast.sender_user_id == User.id)\
+     .order_by(Broadcast.sent_at.desc())\
+     .limit(50)\
+     .all()
+
+    return render_template("admin_broadcast_history.html",
+        user_name=user.name,
+        user_email=user.email,
+        broadcasts=broadcasts
+    )
 
 
 # --------------------------------------------------

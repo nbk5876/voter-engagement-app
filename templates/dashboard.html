@@ -337,6 +337,11 @@
                 <a href="{{ url_for('admin_network') }}" class="action-btn primary">
                     Tree
                 </a>
+                {% if user_email in ['tony.byorick@gmail.com', 'maxatisd@gmail.com'] %}
+                <a href="{{ url_for('admin_broadcast') }}" class="action-btn primary">
+                    📢 Broadcast to All
+                </a>
+                {% endif %}
             </div>
         </div>
 
