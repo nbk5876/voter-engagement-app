@@ -312,6 +312,28 @@
             color: #999;
         }
 
+        .load-template-btn {
+            float: right;
+            background: #5a8fc7;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+
+        .load-template-btn:hover {
+            background: #4a7fb7;
+            transform: translateY(-1px);
+        }
+
+        .load-template-btn.loaded {
+            background: #28a745;
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 10px;
@@ -329,6 +351,14 @@
                 font-size: 0.75rem;
                 padding: 12px 15px;
             }
+
+            .load-template-btn {
+                float: none;
+                display: block;
+                margin-top: 8px;
+                width: 100%;
+                padding: 8px;
+            }
         }
     </style>
 </head>
@@ -340,7 +370,7 @@
 
             <div class="auth-section">
                 <div class="user-info">
-                    <span class="user-email">{{ user_email }}</span>
+                    <span class="user-email">{{ user_name }}</span>
                     <a href="{{ url_for('logout') }}" class="logout-btn">Sign Out</a>
                 </div>
             </div>
@@ -364,8 +394,14 @@
                     <label for="recipient_email">Recipient Email</label>
                     <input type="email" id="recipient_email" name="recipient_email" placeholder="friend@example.com" required>
 
-                    <label for="personal_message">Personal Message <span class="optional">(optional)</span></label>
-                    <textarea id="personal_message" name="personal_message" placeholder="Add a personal note to your invitation..."></textarea>
+                    <div style="position: relative;">
+                        <label for="personal_message">Personal Message <span class="optional">(optional)</span>
+                            <button type="button" class="load-template-btn" onclick="loadEmailTemplate()">
+                                📋 Load Template
+                            </button>
+                        </label>
+                        <textarea id="personal_message" name="personal_message" placeholder="Add a personal note to your invitation..."></textarea>
+                    </div>
 
                     <button type="submit" class="send-btn">Send Invitation</button>
                 </form>
@@ -429,6 +465,30 @@ Hope you'll check it out!</textarea>
     </div>
 
     <script>
+        function loadEmailTemplate() {
+            const emailTextarea = document.getElementById('text-email');
+            let templateText = emailTextarea.value;
+
+            // Remove "Subject:" line, greeting, and opening paragraph
+            templateText = templateText.replace(/^Subject:.*\n\n?/m, '').trim();
+            templateText = templateText.replace(/^Hi,\s*\n+I wanted to share Call5 Democracy with you.*?that matter most\.\s*/s, '').trim();
+
+            const personalMessageField = document.getElementById('personal_message');
+            personalMessageField.value = templateText;
+            personalMessageField.focus();
+            personalMessageField.setSelectionRange(templateText.length, templateText.length);
+
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Loaded';
+            btn.classList.add('loaded');
+
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('loaded');
+            }, 2000);
+        }
+
         function copyText(textareaId, btn) {
             var textarea = document.getElementById(textareaId);
             navigator.clipboard.writeText(textarea.value).then(function() {
