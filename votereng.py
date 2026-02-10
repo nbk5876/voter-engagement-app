@@ -1793,9 +1793,13 @@ def group_manage(group_id):
             "joined_at": m.joined_at.strftime("%Y-%m-%d") if m.joined_at else "",
         })
 
-    # Get recruits who are NOT yet in this group (for invite dropdown)
+    # Get users who are NOT yet in this group (for invite dropdown)
+    # Admins can add any user; non-admins can only add their own recruits
     existing_member_ids = {m.user_id for m in group.members}
-    invitable_recruits = [r for r in user.invitees if r.id not in existing_member_ids]
+    if user.is_admin:
+        invitable_recruits = [u for u in User.query.all() if u.id not in existing_member_ids]
+    else:
+        invitable_recruits = [r for r in user.invitees if r.id not in existing_member_ids]
 
     confirmation = request.args.get("invited")
     broadcast_confirmation = request.args.get("broadcast_sent")
@@ -1843,9 +1847,11 @@ def group_invite(group_id):
     if not recruit_id:
         return redirect(url_for("group_manage", group_id=group_id))
 
-    # Validate the recruit belongs to this user
+    # Validate the recruit belongs to this user (admins can add anyone)
     recruit = db.session.get(User, recruit_id)
-    if not recruit or recruit.invited_by_user_id != user.id:
+    if not recruit:
+        return redirect(url_for("group_manage", group_id=group_id))
+    if not user.is_admin and recruit.invited_by_user_id != user.id:
         return redirect(url_for("group_manage", group_id=group_id))
 
     # Check recruit not already in group
