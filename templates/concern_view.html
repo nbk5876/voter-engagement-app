@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ concern.title }} - Call5 Democracy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+
+        .back-link {
+            color: #2c5aa0;
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .concern-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .concern-title {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.3;
+        }
+
+        .concern-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .scope-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .scope-group {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .scope-network {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .concern-body {
+            margin: 30px 0;
+            line-height: 1.8;
+            color: #333;
+            font-size: 16px;
+            white-space: pre-wrap;
+        }
+
+        .action-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(44, 90, 160, 0.4);
+        }
+
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .flash-msg {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #155724;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            .concern-title { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('group_manage', group_id=concern.group.id) }}" class="back-link">
+            &larr; Back to {{ concern.group.name }}
+        </a>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+            <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="concern-header">
+            <h1 class="concern-title">{{ concern.title }}</h1>
+
+            <div class="concern-meta">
+                <div class="meta-item">
+                    <span>Posted by <strong>{{ concern.creator.name }}</strong></span>
+                </div>
+
+                <div class="meta-item">
+                    <span>{{ concern.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                </div>
+
+                <div class="meta-item">
+                    <span>{{ concern.group.name }}</span>
+                </div>
+
+                <div class="meta-item">
+                    {% if concern.scope == 'group' %}
+                        <span class="scope-badge scope-group">Group Only</span>
+                    {% else %}
+                        <span class="scope-badge scope-network">Network-Wide</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="concern-body">{{ concern.description }}</div>
+
+        {% if can_promote %}
+        <div class="action-section">
+            <p style="color: #666; margin-bottom: 15px;">
+                This concern is currently visible only to {{ concern.group.name }} members.
+                Share it with your entire Call5 network?
+            </p>
+            <button class="btn btn-primary" onclick="showPromoteModal()">
+                Share to Network
+            </button>
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            v0.4.07 | February 2026 | Call 5 Hub and Spoke
+        </div>
+    </div>
+
+    {% if can_promote %}
+    <div id="promoteModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 15px;">Share to Network?</h2>
+            <p style="color: #666; line-height: 1.6;">
+                This will notify all members in your Call5 recruit network.
+                This action cannot be undone.
+            </p>
+            <div class="modal-buttons">
+                <button class="btn" style="background: #f0f0f0; color: #333; flex: 1;" onclick="hidePromoteModal()">
+                    Cancel
+                </button>
+                <form method="POST" action="{{ url_for('promote_concern', concern_id=concern.id) }}" style="flex: 1;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        Share to Network
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showPromoteModal() {
+            document.getElementById('promoteModal').classList.add('active');
+        }
+
+        function hidePromoteModal() {
+            document.getElementById('promoteModal').classList.remove('active');
+        }
+
+        document.getElementById('promoteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hidePromoteModal();
+            }
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

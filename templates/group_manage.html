@@ -325,6 +325,98 @@
             transform: translateY(0);
         }
 
+        .concerns-section {
+            margin-bottom: 20px;
+        }
+
+        .concerns-section .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .concerns-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .concern-card {
+            border: 2px solid #f0f0f0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .concern-card:hover {
+            border-color: #2c5aa0;
+            box-shadow: 0 2px 10px rgba(44, 90, 160, 0.1);
+        }
+
+        .concern-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .concern-card-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .concern-card-header h3 a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .concern-card-header h3 a:hover {
+            color: #2c5aa0;
+        }
+
+        .scope-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .scope-network {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .concern-meta {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 12px;
+        }
+
+        .concern-preview {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .post-concern-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .post-concern-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(44, 90, 160, 0.4);
+        }
+
         .back-btn {
             display: block;
             width: 100%;
@@ -480,11 +572,54 @@
             </div>
             {% endif %}
 
+            <!-- Concerns Section -->
+            <div class="concerns-section">
+                <div class="section-header">
+                    <div class="section-title">Group Concerns</div>
+                    {% if is_member %}
+                    <a href="{{ url_for('create_concern_form', group_id=group.id) }}" class="post-concern-btn">
+                        Post a Concern
+                    </a>
+                    {% endif %}
+                </div>
+
+                {% if group.concerns %}
+                <div class="concerns-list">
+                    {% for concern in group.concerns|sort(attribute='created_at', reverse=True) %}
+                    <div class="concern-card">
+                        <div class="concern-card-header">
+                            <h3>
+                                <a href="{{ url_for('view_concern', concern_id=concern.id) }}">
+                                    {{ concern.title }}
+                                </a>
+                            </h3>
+                            {% if concern.scope == 'network' %}
+                            <span class="scope-badge scope-network">Network-Wide</span>
+                            {% endif %}
+                        </div>
+                        <div class="concern-meta">
+                            <span>Posted by {{ concern.creator.name }}</span>
+                            <span>&bull;</span>
+                            <span>{{ concern.created_at.strftime('%b %d, %Y') }}</span>
+                        </div>
+                        <div class="concern-preview">
+                            {{ concern.description[:200] }}{% if concern.description|length > 200 %}...{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: #999; text-align: center; padding: 30px;">
+                    No concerns posted yet. Be the first to raise an issue!
+                </p>
+                {% endif %}
+            </div>
+
             <a href="{{ url_for('groups_list') }}" class="back-btn">Back to Groups</a>
         </div>
 
         <div class="footer">
-            v0.3 | February 2026 | Call 5 Hub and Spoke
+            v0.4.07 | February 2026 | Call 5 Hub and Spoke
         </div>
     </div>
 </body>

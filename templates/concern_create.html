@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post a Concern - Call5 Democracy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        h1 {
+            color: #2c5aa0;
+            font-size: 24px;
+        }
+
+        .breadcrumb {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb a {
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2c5aa0;
+        }
+
+        textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+
+        .help-text {
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+            line-height: 1.5;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a66 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(44, 90, 160, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            .button-group { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Post a Concern</h1>
+        </div>
+
+        <div class="breadcrumb">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a> &rarr;
+            <a href="{{ url_for('group_manage', group_id=group.id) }}">{{ group.name }}</a> &rarr;
+            Post Concern
+        </div>
+
+        <form method="POST" action="{{ url_for('create_concern', group_id=group.id) }}">
+            <div class="form-group">
+                <label for="title">Concern Title *</label>
+                <input type="text"
+                       id="title"
+                       name="title"
+                       placeholder="E.g., Support Senator Wyden's Epstein Transparency Bill"
+                       maxlength="200"
+                       required>
+                <p class="help-text">A clear, concise headline (max 200 characters)</p>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description *</label>
+                <textarea id="description"
+                          name="description"
+                          placeholder="Explain the issue, why it matters, and what action you'd like the group to consider..."
+                          required></textarea>
+                <p class="help-text">
+                    Provide context and details. You can include links, bill numbers, dates, etc.
+                    This will be visible to all members of {{ group.name }}.
+                </p>
+            </div>
+
+            <div class="button-group">
+                <button type="button"
+                        class="btn btn-secondary"
+                        onclick="window.location.href='{{ url_for('group_manage', group_id=group.id) }}'">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Post Concern
+                </button>
+            </div>
+        </form>
+
+        <div class="footer">
+            v0.4.07 | February 2026 | Call 5 Hub and Spoke
+        </div>
+    </div>
+</body>
+</html>

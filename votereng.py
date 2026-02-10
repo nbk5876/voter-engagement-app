@@ -196,6 +196,25 @@ class LoginAttempt(db.Model):
     attempted_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class Concern(db.Model):
+    __tablename__ = "concerns"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"), nullable=False)
+    scope = db.Column(db.String(20), default="group", nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    creator = db.relationship("User", backref="concerns_created")
+    group = db.relationship("Group", backref="concerns")
+
+    def __repr__(self):
+        return f"<Concern {self.id}: {self.title[:30]}>"
+
+
 class Broadcast(db.Model):
     __tablename__ = "broadcasts"
 
@@ -403,6 +422,93 @@ Call5 Democracy
             return {"success": False, "error": f"MailGun error: {response.status_code}"}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+# --------------------------------------------------
+# Network Helper Functions (v0.4.07)
+# --------------------------------------------------
+def get_network_members(user_id):
+    """
+    Get all users in the same recruit network (share a common ancestor).
+    Finds root ancestor, then BFS traversal to get all descendants.
+    Returns: List of User objects
+    """
+    user = db.session.get(User, user_id)
+    if not user:
+        return []
+
+    # Find root ancestor
+    root = user
+    while root.invited_by_user_id is not None:
+        root = db.session.get(User, root.invited_by_user_id)
+
+    # Get all descendants of root (BFS traversal)
+    network = []
+    queue = [root]
+    visited = set()
+
+    while queue:
+        current = queue.pop(0)
+        if current.id in visited:
+            continue
+        visited.add(current.id)
+        network.append(current)
+
+        for recruit in current.invitees:
+            if recruit.id not in visited:
+                queue.append(recruit)
+
+    return network
+
+
+def send_concern_notification(recipient_email, recipient_name, concern_title,
+                              creator_name, group_name, concern_url, scope):
+    """Send email notification when a concern is posted or promoted."""
+    mailgun_api_key = os.getenv("MAILGUN_API_KEY")
+    mailgun_domain = os.getenv("MAILGUN_DOMAIN")
+    mailgun_base_url = os.getenv("MAILGUN_BASE_URL", "https://api.mailgun.net")
+
+    if not mailgun_api_key or not mailgun_domain:
+        print("MailGun credentials not configured — skipping concern notification")
+        return
+
+    if scope == "group":
+        subject = f'New concern in {group_name}: "{concern_title}"'
+        body_text = (
+            f"{creator_name} posted a concern in {group_name}:\n\n"
+            f'"{concern_title}"\n\n'
+            f"View full concern and discuss:\n{concern_url}\n\n"
+            f"━━━━━━━━━━━━━━━\n"
+            f"You're receiving this because you're a member of {group_name}."
+        )
+    else:
+        subject = f'Network Concern: "{concern_title}"'
+        body_text = (
+            f"{creator_name} shared a concern with the Call5 network:\n\n"
+            f'"{concern_title}"\n\n'
+            f"Originally posted in: {group_name}\n\n"
+            f"View full concern:\n{concern_url}\n\n"
+            f"━━━━━━━━━━━━━━━\n"
+            f"You're receiving this because you're part of the Call5 recruit network."
+        )
+
+    try:
+        response = requests.post(
+            f"{mailgun_base_url}/v3/{mailgun_domain}/messages",
+            auth=("api", mailgun_api_key),
+            data={
+                "from": f"Call5 Democracy <noreply@{mailgun_domain}>",
+                "to": recipient_email,
+                "subject": subject,
+                "text": body_text,
+            }
+        )
+        if response.status_code == 200:
+            print(f"Concern notification sent to {recipient_email}")
+        else:
+            print(f"Failed to send concern notification: {response.text}")
+    except Exception as e:
+        print(f"Error sending concern notification: {str(e)}")
 
 
 # Initialize OpenAI client
@@ -1816,6 +1922,7 @@ def group_manage(group_id):
         broadcast_confirmation=broadcast_confirmation,
         error=error,
         is_founder=is_founder,
+        is_member=True,
         member_count=member_count)
 
 
@@ -1931,6 +2038,168 @@ def group_broadcast(group_id):
     else:
         return redirect(url_for("group_manage", group_id=group_id,
             error="Failed to send message. Please try again."))
+
+
+# --------------------------------------------------
+# Concerns (v0.4.07)
+# --------------------------------------------------
+@app.route("/groups/<int:group_id>/concerns/create")
+def create_concern_form(group_id):
+    """Show form to create a new concern in a group."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    membership = GroupMember.query.filter_by(
+        group_id=group_id, user_id=user_id
+    ).first()
+
+    if not membership:
+        flash("You must be a member of this group to post concerns.")
+        return redirect(url_for("groups_list"))
+
+    group = db.session.get(Group, group_id)
+    return render_template("concern_create.html",
+                           group=group,
+                           user_name=session.get("user_name"))
+
+
+@app.route("/groups/<int:group_id>/concerns/create", methods=["POST"])
+def create_concern(group_id):
+    """Handle concern creation form submission."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    membership = GroupMember.query.filter_by(
+        group_id=group_id, user_id=user_id
+    ).first()
+
+    if not membership:
+        flash("You must be a member of this group to post concerns.")
+        return redirect(url_for("groups_list"))
+
+    title = request.form.get("title", "").strip()
+    description = request.form.get("description", "").strip()
+
+    if not title or not description:
+        flash("Title and description are required.")
+        return redirect(url_for("create_concern_form", group_id=group_id))
+
+    concern = Concern(
+        title=title,
+        description=description,
+        created_by_user_id=user_id,
+        group_id=group_id,
+        scope="group"
+    )
+    db.session.add(concern)
+    db.session.commit()
+
+    # Send email notifications to group members (except creator)
+    group = db.session.get(Group, group_id)
+    members = [m.user for m in group.members if m.user_id != user_id]
+
+    for member in members:
+        send_concern_notification(
+            recipient_email=member.email,
+            recipient_name=member.name,
+            concern_title=title,
+            creator_name=session.get("user_name"),
+            group_name=group.name,
+            concern_url=request.host_url.rstrip("/") + f"/concerns/{concern.id}",
+            scope="group"
+        )
+
+    flash("Concern posted successfully.")
+    return redirect(url_for("group_manage", group_id=group_id))
+
+
+@app.route("/concerns/<int:concern_id>/promote", methods=["POST"])
+def promote_concern(concern_id):
+    """Promote a concern from group-scoped to network-wide."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    concern = db.session.get(Concern, concern_id)
+
+    if not concern:
+        flash("Concern not found.")
+        return redirect(url_for("dashboard"))
+
+    if concern.created_by_user_id != user_id:
+        flash("Only the concern creator can share to network.")
+        return redirect(url_for("view_concern", concern_id=concern_id))
+
+    if concern.scope != "group":
+        flash("This concern is already network-wide.")
+        return redirect(url_for("view_concern", concern_id=concern_id))
+
+    concern.scope = "network"
+    concern.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    # Get all network members
+    network_members = get_network_members(user_id)
+
+    # Get group members (already notified)
+    group = concern.group
+    group_member_ids = [m.user_id for m in group.members]
+
+    # Send emails to network members not in the group (and not the creator)
+    for member in network_members:
+        if member.id not in group_member_ids and member.id != user_id:
+            send_concern_notification(
+                recipient_email=member.email,
+                recipient_name=member.name,
+                concern_title=concern.title,
+                creator_name=concern.creator.name,
+                group_name=group.name,
+                concern_url=request.host_url.rstrip("/") + f"/concerns/{concern_id}",
+                scope="network"
+            )
+
+    flash("Concern shared with network.")
+    return redirect(url_for("view_concern", concern_id=concern_id))
+
+
+@app.route("/concerns/<int:concern_id>")
+def view_concern(concern_id):
+    """View a single concern with full details."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    concern = db.session.get(Concern, concern_id)
+
+    if not concern:
+        flash("Concern not found.")
+        return redirect(url_for("dashboard"))
+
+    # Check visibility permissions
+    if concern.scope == "group":
+        membership = GroupMember.query.filter_by(
+            group_id=concern.group_id, user_id=user_id
+        ).first()
+        if not membership:
+            flash("You do not have permission to view this concern.")
+            return redirect(url_for("dashboard"))
+    else:
+        network_members = get_network_members(user_id)
+        network_ids = [m.id for m in network_members]
+        if concern.created_by_user_id not in network_ids:
+            flash("You do not have permission to view this concern.")
+            return redirect(url_for("dashboard"))
+
+    is_creator = (concern.created_by_user_id == user_id)
+    can_promote = is_creator and concern.scope == "group"
+
+    return render_template("concern_view.html",
+                           concern=concern,
+                           is_creator=is_creator,
+                           can_promote=can_promote,
+                           user_name=session.get("user_name"))
 
 
 # --------------------------------------------------
