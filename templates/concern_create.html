@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Post a Concern - Call5 Democracy</title>
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -64,8 +65,7 @@
             font-size: 14px;
         }
 
-        input[type="text"],
-        textarea {
+        input[type="text"] {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
@@ -75,15 +75,23 @@
             transition: border-color 0.3s;
         }
 
-        input[type="text"]:focus,
-        textarea:focus {
+        input[type="text"]:focus {
             outline: none;
             border-color: #2c5aa0;
         }
 
-        textarea {
-            min-height: 200px;
-            resize: vertical;
+        #editor-container {
+            height: 300px;
+            border: 2px solid #e0e0e0;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        .ql-toolbar.ql-snow {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px 8px 0 0;
         }
 
         .help-text {
@@ -156,7 +164,7 @@
             Post Concern
         </div>
 
-        <form method="POST" action="{{ url_for('create_concern', group_id=group.id) }}">
+        <form method="POST" action="{{ url_for('create_concern', group_id=group.id) }}" onsubmit="return submitForm()">
             <div class="form-group">
                 <label for="title">Concern Title *</label>
                 <input type="text"
@@ -169,13 +177,11 @@
             </div>
 
             <div class="form-group">
-                <label for="description">Description *</label>
-                <textarea id="description"
-                          name="description"
-                          placeholder="Explain the issue, why it matters, and what action you'd like the group to consider..."
-                          required></textarea>
+                <label>Description *</label>
+                <div id="editor-container"></div>
+                <input type="hidden" name="description" id="description-input">
                 <p class="help-text">
-                    Provide context and details. You can include links, bill numbers, dates, etc.
+                    Use the toolbar to format text, add links, and create lists.
                     This will be visible to all members of {{ group.name }}.
                 </p>
             </div>
@@ -193,8 +199,35 @@
         </form>
 
         <div class="footer">
-            v0.4.07 | February 2026 | Call 5 Hub and Spoke
+            v0.4.07b | February 2026 | Call 5 Hub and Spoke
         </div>
     </div>
+
+    <script src="https://cdn.quilljs.com/1.3.7/quill.js"></script>
+    <script>
+        var quill = new Quill('#editor-container', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'header': 2 }, { 'header': 3 }],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                    ['link', 'blockquote'],
+                    ['clean']
+                ]
+            },
+            placeholder: 'Describe the civic issue and your proposed solution...'
+        });
+
+        function submitForm() {
+            var html = quill.root.innerHTML;
+            if (html === '<p><br></p>' || html.trim() === '') {
+                alert('Description is required.');
+                return false;
+            }
+            document.getElementById('description-input').value = html;
+            return true;
+        }
+    </script>
 </body>
 </html>

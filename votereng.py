@@ -27,6 +27,7 @@ from datetime import datetime, timezone, timedelta
 import bcrypt
 from email_validator import validate_email, EmailNotValidError
 from flask import flash
+import bleach
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -434,6 +435,18 @@ Call5 Democracy
 # --------------------------------------------------
 # Network Helper Functions (v0.4.07)
 # --------------------------------------------------
+ALLOWED_TAGS = ["p", "br", "strong", "em", "u", "s", "h2", "h3",
+                "ul", "ol", "li", "a", "blockquote"]
+ALLOWED_ATTRIBUTES = {"a": ["href", "target", "rel"], "*": []}
+
+
+def sanitize_html(html):
+    """Clean user HTML to prevent XSS attacks."""
+    clean = bleach.clean(html, tags=ALLOWED_TAGS,
+                         attributes=ALLOWED_ATTRIBUTES, strip=True)
+    return clean
+
+
 def get_network_members(user_id):
     """
     Get all users in the same recruit network (share a common ancestor).
@@ -2087,11 +2100,13 @@ def create_concern(group_id):
         return redirect(url_for("groups_list"))
 
     title = request.form.get("title", "").strip()
-    description = request.form.get("description", "").strip()
+    description_raw = request.form.get("description", "").strip()
 
-    if not title or not description:
+    if not title or not description_raw:
         flash("Title and description are required.")
         return redirect(url_for("create_concern_form", group_id=group_id))
+
+    description = sanitize_html(description_raw)
 
     concern = Concern(
         title=title,

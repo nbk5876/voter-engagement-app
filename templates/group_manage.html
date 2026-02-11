@@ -603,7 +603,7 @@
                             <span>{{ concern.created_at.strftime('%b %d, %Y') }}</span>
                         </div>
                         <div class="concern-preview">
-                            {{ concern.description[:200] }}{% if concern.description|length > 200 %}...{% endif %}
+                            {{ concern.description|striptags|truncate(200) }}
                         </div>
                     </div>
                     {% endfor %}
@@ -619,7 +619,7 @@
         </div>
 
         <div class="footer">
-            v0.4.07 | February 2026 | Call 5 Hub and Spoke
+            v0.4.07b | February 2026 | Call 5 Hub and Spoke
         </div>
     </div>
 </body>

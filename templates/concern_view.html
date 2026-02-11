@@ -87,7 +87,57 @@
             line-height: 1.8;
             color: #333;
             font-size: 16px;
-            white-space: pre-wrap;
+        }
+
+        .concern-body h2 {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-top: 1.2em;
+            margin-bottom: 0.5em;
+            color: #2c5aa0;
+        }
+
+        .concern-body h3 {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+            color: #2c5aa0;
+        }
+
+        .concern-body ul, .concern-body ol {
+            margin-left: 2em;
+            margin-bottom: 1em;
+        }
+
+        .concern-body li {
+            margin-bottom: 0.5em;
+        }
+
+        .concern-body a {
+            color: #2c5aa0;
+            text-decoration: underline;
+        }
+
+        .concern-body a:hover {
+            color: #1e3a66;
+        }
+
+        .concern-body blockquote {
+            border-left: 4px solid #2c5aa0;
+            padding-left: 1em;
+            margin-left: 0;
+            margin-bottom: 1em;
+            font-style: italic;
+            color: #555;
+        }
+
+        .concern-body strong {
+            font-weight: bold;
+        }
+
+        .concern-body em {
+            font-style: italic;
         }
 
         .action-section {
@@ -218,7 +268,7 @@
             </div>
         </div>
 
-        <div class="concern-body">{{ concern.description }}</div>
+        <div class="concern-body">{{ concern.description|safe }}</div>
 
         {% if can_promote %}
         <div class="action-section">
@@ -233,7 +283,7 @@
         {% endif %}
 
         <div class="footer">
-            v0.4.07 | February 2026 | Call 5 Hub and Spoke
+            v0.4.07b | February 2026 | Call 5 Hub and Spoke
         </div>
     </div>
 
