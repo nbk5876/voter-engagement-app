@@ -39,6 +39,13 @@ from personality import (
 # Load environment variables
 load_dotenv()
 print(f"DEBUG: MAILGUN_DOMAIN = {os.getenv('MAILGUN_DOMAIN')}")
+_db_url = os.getenv("DATABASE_URL", "")
+if "render.com" in _db_url:
+    print("DATABASE: Render (Production)")
+elif "localhost" in _db_url:
+    print("DATABASE: Local (votereng_dev)")
+else:
+    print(f"DATABASE: {_db_url[:50]}...")
 
 app = Flask(__name__)
 
@@ -2199,6 +2206,20 @@ def view_concern(concern_id):
                            concern=concern,
                            is_creator=is_creator,
                            can_promote=can_promote,
+                           user_name=session.get("user_name"))
+
+
+@app.route("/concerns/all")
+def all_concerns():
+    """Display all concerns from all groups (read-only showcase)."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("index"))
+
+    concerns = Concern.query.order_by(Concern.created_at.desc()).all()
+
+    return render_template("concerns_all.html",
+                           concerns=concerns,
                            user_name=session.get("user_name"))
 
 
