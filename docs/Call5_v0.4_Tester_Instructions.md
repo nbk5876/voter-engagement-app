@@ -10,7 +10,7 @@ This guide provides step-by-step instructions for using the platform. It is orga
 
 **Are you NEW to Call5?**
 You received an invite link from someone and are joining for the first time.
-> Jump to [Part 2: For New Members (Invitees)](#part-2-for-new-members-invitees)
+> Jump to [Part 2: For New Members (Invitees)](#21-what-to-expect)
 
 **Are you ALREADY a Call5 member?**
 You have an account and want to recruit new members, manage your network, or explore platform features.
