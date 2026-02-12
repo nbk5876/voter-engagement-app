@@ -1,728 +1,571 @@
-# Call5 Democracy v0.4 - Tester Instructions
+# Call5 Democracy v0.4 - User Guide & Testing Instructions
 
-## Introduction
+## Welcome to Call5 Democracy
 
-Call5 Democracy is a hub-and-spoke civic engagement platform that helps citizens organize, recruit, and advocate for civic issues through their social networks. This document provides step-by-step testing instructions for validating core functionality across six key scenarios.
+Call5 Democracy is a civic engagement platform that grows through personal networks. Each member recruits others using their unique invite link, creating an expanding "call-5" network of engaged citizens who organize around civic issues in their communities.
 
-All tests should be performed against the production application unless otherwise noted.
+This guide provides step-by-step instructions for using the platform. It is organized by your role.
+
+## How to Use This Guide
+
+**Are you NEW to Call5?**
+You received an invite link from someone and are joining for the first time.
+> Jump to [Part 2: For New Members (Invitees)](#part-2-for-new-members-invitees)
+
+**Are you ALREADY a Call5 member?**
+You have an account and want to recruit new members, manage your network, or explore platform features.
+> See [Part 1: For Existing Members (Invitors)](#part-1-for-existing-members-invitors)
 
 ## Table of Contents
 
-1. [Test Environment](#test-environment)
-2. [Scenario 1: New User Signup - Google Authentication with Invite Code](#scenario-1-new-user-signup---google-authentication-with-invite-code)
-3. [Scenario 2: New User Signup - Local Authentication with Invite Code](#scenario-2-new-user-signup---local-authentication-with-invite-code)
-4. [Scenario 3: Returning User Login - Google Authentication Flow](#scenario-3-returning-user-login---google-authentication-flow)
-5. [Scenario 4: Returning User Login - Local Authentication Flow](#scenario-4-returning-user-login---local-authentication-flow)
-6. [Scenario 5: Viewing Concerns - Navigate and Read Full Text](#scenario-5-viewing-concerns---navigate-and-read-full-text)
-7. [Scenario 6: Network Tree Visualization - Access and Interact](#scenario-6-network-tree-visualization---access-and-interact)
-8. [Appendix A: Test Data Setup](#appendix-a-test-data-setup)
-9. [Appendix B: Common Troubleshooting](#appendix-b-common-troubleshooting)
+**Part 1: For Existing Members (Invitors)**
+- [1.1 How to Get Your Invite Link](#11-how-to-get-your-invite-link)
+- [1.2 How to Share Your Invite Link](#12-how-to-share-your-invite-link)
+- [1.3 How to Verify Your Recruits](#13-how-to-verify-your-recruits)
+- [1.4 Messaging Your Recruits](#14-messaging-your-recruits)
+- [1.5 Creating and Managing Groups](#15-creating-and-managing-groups)
+- [1.6 Viewing and Posting Concerns](#16-viewing-and-posting-concerns)
+- [1.7 Viewing Your Network Tree](#17-viewing-your-network-tree)
+
+**Part 2: For New Members (Invitees)**
+- [2.1 What to Expect](#21-what-to-expect)
+- [2.2 Signing Up with Google (Option A)](#22-signing-up-with-google-option-a)
+- [2.3 Signing Up with Email and Password (Option B)](#23-signing-up-with-email-and-password-option-b)
+- [2.4 Your First Time on the Dashboard](#24-your-first-time-on-the-dashboard)
+- [2.5 Logging In on Future Visits (Google)](#25-logging-in-on-future-visits-google)
+- [2.6 Logging In on Future Visits (Email/Password)](#26-logging-in-on-future-visits-emailpassword)
+- [2.7 Exploring Concerns](#27-exploring-concerns)
+- [2.8 Viewing Your Network Tree](#28-viewing-your-network-tree)
+
+**Appendices**
+- [Appendix A: Test Data Setup (For Admins)](#appendix-a-test-data-setup-for-admins)
+- [Appendix B: Common Troubleshooting](#appendix-b-common-troubleshooting)
 
 ---
 
-## Test Environment
+## Application Information
 
 - **Application URL:** `https://voter-engagement-app.onrender.com/`
 - **Version:** v0.4.07b
-- **Supported Browsers:** Chrome, Firefox, Safari, Edge (latest versions)
-- **Mobile:** Responsive design; all pages work on mobile browsers
-- **Required Materials:**
-  - A Google account (for Google OAuth scenarios)
-  - A unique email address not already registered (for local signup scenarios)
-  - An invite code from an existing user (for signup scenarios)
+- **Supported Browsers:** Chrome (recommended), Firefox, Safari, Edge
+- **Mobile:** All pages are mobile-friendly and work on phone and tablet browsers
 
 ---
 
-## Scenario 1: New User Signup - Google Authentication with Invite Code
+# Part 1: For Existing Members (Invitors)
 
-### Purpose
-Verify that a new user can create an account using Google OAuth when they have a valid invite code, and that the recruitment relationship is correctly established.
+**This section is for you if:**
+- You already have a Call5 account
+- You want to recruit new members to grow the network
+- You want to manage your groups and concerns
+- You want to explore the network tree
 
-### Prerequisites
-- [ ] A valid invite code obtained from an existing user (see Step 1 below)
-- [ ] A Google account that has **never** been used to sign into Call5
-- [ ] Use an incognito/private browser window to ensure a clean session
+---
 
-### Step-by-Step Instructions
+## 1.1 How to Get Your Invite Link
 
-**Part A: Obtain an Invite Code**
+Your invite link is a unique URL that connects new members to you when they sign up. Every person who uses your link becomes part of your recruit network.
 
-1. Open a browser and navigate to `https://voter-engagement-app.onrender.com/`
-2. Log in as an existing user (Google or local auth).
-3. On the landing page, click the **"Dashboard"** button in the blue header bar (top center, white semi-transparent button).
-4. On the Dashboard page, locate the **"Your Invite Link"** section below the stats card. It contains a read-only text field with a URL in this format:
+1. Log in to Call5 at `https://voter-engagement-app.onrender.com/`
+2. From the landing page, click the **"Dashboard"** button in the blue header bar.
+3. On the Dashboard, locate the **"Your Invite Link"** section. It is below the stats card that shows your recruit count.
+4. Your invite link appears in a read-only text field. It looks like this:
    ```
    https://voter-engagement-app.onrender.com/?ref=XXXXXXXXXXXXXXXXXXXX
    ```
-5. Click the blue **"Copy"** button next to the invite link. The button text will briefly change to **"Copied!"** to confirm.
-6. Save this URL. The invite code is the 20-character string after `?ref=`.
+5. Click the blue **"Copy"** button next to the link. The button text briefly changes to **"Copied!"** to confirm the link is on your clipboard.
 
    `[Screenshot: Dashboard showing the "Your Invite Link" section with Copy button]`
 
-**Part B: Sign Up as a New User**
+> **Tip:** Your invite code is the 20-character string after `?ref=`. This code is unique to you and never changes.
 
-7. Open a **new incognito/private browser window** (important: do not reuse the window from Part A).
-8. Paste the invite URL into the address bar and press Enter. Example:
-   ```
-   https://voter-engagement-app.onrender.com/?ref=XXXXXXXXXXXXXXXXXXXX
-   ```
-9. The **Landing Page** loads. In the top-right corner, the page label reads "Landing Page". The title reads **"Voter Engagement Response Form"**.
-10. In the blue header, locate the authentication section. You should see three options:
-    - A white **"Sign in with Google"** button with the Google logo (four-color G icon)
-    - A semi-transparent **"Sign up with Email"** button below a divider line with "or"
-    - A text link: "Already have an account? **Log in**"
-11. Click the white **"Sign in with Google"** button.
+---
 
-    `[Screenshot: Landing page showing the three auth options for unauthenticated users]`
+## 1.2 How to Share Your Invite Link
 
-12. Google's account selection screen appears. Select the Google account you want to use for the new Call5 account.
-13. If prompted, approve the OAuth consent screen for Call5 Democracy.
-14. After authorization, you are redirected back to the Landing Page (`/`).
+Once you have your invite link copied, send it to people you want to recruit. Here are effective ways to share it:
 
-**Part C: Verify Account Creation**
+- **Nextdoor private message** - Great for reaching neighbors directly
+- **Email** - Include a brief personal message explaining what Call5 is
+- **Text message / SMS** - Quick and easy for people you know
+- **Social media DM** (Twitter, Bluesky, Mastodon) - For your broader network
 
-15. The landing page should now show your Google email address in the blue header area, along with a **"Dashboard"** button and a **"Sign Out"** button.
-16. Click the **"Dashboard"** button.
-17. The Dashboard page loads. Verify the following:
-    - The heading reads **"Welcome, [Your Name]!"** (your Google account name)
-    - Below the welcome heading, you see: **"Recruited by: [Inviter's Name]"** (the name of the user whose invite code you used)
-    - The stats card shows **"0"** with the label **"People Recruited"**
-    - The **"Your Invite Link"** section displays your own unique invite URL
-    - All action buttons are visible (some may be grayed out/disabled)
+**Using the Share Page:**
 
-    `[Screenshot: New user's Dashboard showing "Recruited by" and initial stats]`
+For more sharing options, click the **"Share Your Invite Link"** button on your Dashboard. The Share page (`/share`) provides:
 
-### Expected Results
+- Your invite link with a **"Copy"** button
+- An **email invitation form** where you enter a recipient's email and optional personal message. Click **"Send Invitation"** to send directly from Call5.
+- Pre-written **copy-and-paste messages** for five platforms:
+  - Nextdoor, Twitter, Bluesky, Mastodon, and Email
+  - Each message includes your invite link and is ready to copy
 
-| Step | Expected Result |
-|------|----------------|
-| 9 | Landing page loads with "Sign in with Google" button visible |
-| 14 | Redirect back to landing page after Google auth |
-| 15 | User email appears in header with Dashboard and Sign Out buttons |
-| 17 | Dashboard shows welcome message, recruiter attribution, and 0 recruits |
+   `[Screenshot: Share page showing platform cards with pre-written messages]`
 
-### Success Criteria
-- [ ] New user account created successfully
-- [ ] "Recruited by: [Inviter Name]" displays correctly on dashboard
-- [ ] Stats show 0 People Recruited
-- [ ] User's own unique invite link is generated and displayed
-- [ ] Inviter's recruit count increased by 1 (verify by logging in as the inviter)
+**What to tell people:**
 
-### Edge Cases
+When sharing your link, a brief explanation helps. For example:
+> "I'm using Call5 Democracy to stay informed and organize around local civic issues. Join my network using this link: [your invite link]"
 
-**Invalid invite code:**
-- Navigate to `https://voter-engagement-app.onrender.com/?ref=INVALIDCODE123`
-- Sign in with Google
-- **Expected:** Account is created successfully, but **no** "Recruited by" line appears on the dashboard. The invalid code is silently ignored.
+---
 
-**User already has an account:**
-- Navigate to the invite URL and click "Sign in with Google"
-- Select a Google account that is already registered in Call5
-- **Expected:** User is logged in as normal. The invite code does NOT overwrite any existing recruitment relationship. Redirect to the landing page.
+## 1.3 How to Verify Your Recruits
 
-**Missing invite code (no `?ref=` parameter):**
-- Navigate to `https://voter-engagement-app.onrender.com/` (no ref parameter)
-- Sign in with Google using a new account
-- **Expected:** Account is created with no recruiter. Dashboard shows welcome message but no "Recruited by" line.
+After someone signs up using your invite link, you can confirm they joined:
+
+1. Go to your **Dashboard**.
+2. Check the **stats card** at the top. The large blue number shows your total **People Recruited**. This count increases each time someone signs up with your link.
+3. For a detailed view, click the **"Tree"** button near the bottom of the Dashboard to see your full recruitment network.
+
+### What if my recruit count didn't go up?
+- The new member must complete their signup (including email verification if they used email/password).
+- Refresh your Dashboard page to see the updated count.
+- If the person navigated directly to the signup page without first loading your invite link, the recruitment relationship won't be established. They need to click your link first, then sign up.
+
+---
+
+## 1.4 Messaging Your Recruits
+
+Call5 includes a built-in messaging system for communicating with your recruiter and your recruits.
+
+**From the Dashboard, you have these messaging buttons:**
+
+- **"Message Your Recruiter"** - Send a message to the person who recruited you. (Grayed out with "(No Recruiter)" if you are a root user with no recruiter.)
+- **"Message Your Recruits"** - Send a message to people you recruited. (Grayed out with "(No Recruits)" if you haven't recruited anyone yet.)
+- **"Messages"** - View your inbox with all sent and received messages.
+
+> **Note:** You can only message people in your direct recruitment chain (your recruiter and your recruits). This keeps conversations focused and relevant.
+
+---
+
+## 1.5 Creating and Managing Groups
+
+Groups let you organize your recruits around specific topics or activities.
+
+**Creating a Group:**
+1. From the Dashboard, click **"Create Group"**. (This button is grayed out with "(Recruit first)" until you have at least one recruit.)
+2. Fill in the group details and submit.
+
+**Managing Groups:**
+1. From the Dashboard, click **"Your Groups"** to see all groups you belong to or lead.
+2. Click on a group name to go to its management page, where you can view members, post concerns, and manage the group.
+
+---
+
+## 1.6 Viewing and Posting Concerns
+
+Concerns are civic issues that members share with their groups and the broader network.
+
+**Viewing All Concerns:**
+1. From the Dashboard, click **"View All Concerns"** (located after "Your Groups" in the button list).
+2. The All Concerns page shows every concern across the platform, sorted newest first.
+3. Each concern card displays:
+   - **Title** (clickable to view full details)
+   - **Scope badge:** "Group Only" (blue) or "Network-Wide" (green)
+   - **Metadata:** Author name, group name, and date
+   - **Preview:** First 200 characters of the description
+4. Click any title to read the full concern with rich text formatting.
+
+**Posting a New Concern:**
+1. Go to a group page (Dashboard > **"Your Groups"** > click a group name).
+2. Scroll to the **"Concerns"** section at the bottom.
+3. Click **"Post a Concern"**.
+4. On the Post a Concern page:
+   - Enter a **title** (max 200 characters)
+   - Write a **description** using the rich text editor toolbar (bold, italic, headings, lists, links, blockquotes)
+   - Click **"Post Concern"**
+5. The concern is initially visible only to group members (scope: "Group Only").
+
+**Promoting a Concern to the Network:**
+
+If you created a group-scoped concern and want to share it more broadly:
+1. Open the concern by clicking its title.
+2. If you are the creator and the concern is still "Group Only," you will see a **"Share to Network"** button at the bottom.
+3. Click it, then confirm in the modal dialog.
+4. The concern becomes "Network-Wide" and all members in your recruit network are notified by email.
+5. This action cannot be undone.
+
+---
+
+## 1.7 Viewing Your Network Tree
+
+The network tree shows the full recruitment hierarchy, so you can see how your network is growing.
+
+1. From the Dashboard, click the **"Tree"** button (near the bottom of the action buttons).
+2. The **Text View** loads by default, showing an indented list:
+   - Each line shows: **Name** (X recruits)
+   - Indentation shows who recruited whom (deeper indent = recruited by the person above)
+3. Click the **"🌳 Graph View"** tab for an interactive visual map:
+   - Blue boxes represent members, with arrows showing who recruited whom
+   - Larger boxes = more recruits
+   - The graph flows left-to-right (founders on the left, newest recruits on the right)
+4. **Interact with the graph:**
+   - Click and drag nodes to reposition them
+   - Scroll to zoom in/out
+   - Click a node to see the member's name and email
+5. **Control buttons** (above the graph):
+   - **"Fit to Screen"** - Re-centers the view
+   - **"Toggle Physics"** - Enables/disables node animation
+   - **"Export Image"** - Downloads the graph as a PNG file
+
+   `[Screenshot: Graph View showing the recruitment network visualization]`
+
+---
+
+# Part 2: For New Members (Invitees)
+
+**This section is for you if:**
+- You received an invite link from someone
+- You are signing up for Call5 for the first time
+- You want to understand how to use the platform
+
+**Before you start:** You should have received an invite link that looks like this:
+```
+https://voter-engagement-app.onrender.com/?ref=XXXXXXXXXXXXXXXXXXXX
+```
+
+If you don't have this link yet, ask the person who invited you to send it to you. The link is important because it connects your new account to the person who invited you.
+
+---
+
+## 2.1 What to Expect
+
+Here's what happens when you join Call5:
+
+1. You click the invite link you received
+2. You create an account (using Google or email/password - your choice)
+3. You land on your personal Dashboard
+4. You get your own invite link to recruit others
+5. You can explore concerns, view the network tree, and participate in groups
+
+The signup process takes about 2 minutes. You'll need either a Google account or a valid email address.
+
+---
+
+## 2.2 Signing Up with Google (Option A)
+
+This is the fastest way to join. You'll use your existing Google account - no new password to remember.
+
+### What You Need
+- The invite link you received
+- A Google account (Gmail, Google Workspace, etc.)
+
+### Steps
+
+1. Click the invite link you received, or paste it into your browser's address bar and press Enter.
+2. A page titled **"Voter Engagement Response Form"** loads. This is the Call5 landing page.
+3. In the blue header area, look for the white **"Sign in with Google"** button. It has the familiar four-color Google "G" logo next to the text.
+
+   `[Screenshot: Landing page showing the "Sign in with Google" button]`
+
+4. Click **"Sign in with Google"**.
+5. Google's account selection screen appears. Choose the Google account you want to use for Call5.
+6. If this is your first time, Google may ask you to approve Call5 Democracy's access. Click **"Allow"** or **"Continue"**.
+7. You are redirected back to the Call5 landing page. Your email now appears in the blue header area, along with two new buttons: **"Dashboard"** and **"Sign Out"**.
+
+   `[Screenshot: Landing page after successful Google sign-in showing email and Dashboard button]`
+
+8. Click the **"Dashboard"** button to go to your personal Dashboard.
+9. Your Dashboard loads. You should see:
+   - **"Welcome, [Your Name]!"** at the top (your Google account name)
+   - **"Recruited by: [Name]"** below the welcome line (the name of the person who sent you the invite link)
+   - A stats card showing **"0"** People Recruited (this will grow as you invite others)
+   - **"Your Invite Link"** section with your own unique link for recruiting others
+
+   `[Screenshot: New member's Dashboard showing welcome message and recruiter attribution]`
+
+That's it! Your account is created and ready to use. Continue to [Section 2.4](#24-your-first-time-on-the-dashboard) to learn about your Dashboard.
 
 ### Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| Google sign-in button does nothing | Check that pop-ups are not blocked. Try a different browser. |
-| Redirected to an error page after Google auth | Clear cookies and try again. The OAuth session may have expired. |
-| "Recruited by" not showing | Verify the invite code was in the URL when you first loaded the landing page. The code is captured on page load, not on sign-in. |
+| The Google sign-in button does nothing when I click it | Pop-ups may be blocked. Check your browser's pop-up blocker settings and allow pop-ups for this site. |
+| I see an error page after approving Google access | Clear your browser cookies and try again. Open the invite link in a fresh browser tab. |
+| My Dashboard doesn't show "Recruited by" anyone | Make sure you opened the **invite link** first (the URL with `?ref=...`), then signed in. If you navigated to the site directly without the invite link, the connection to your inviter won't be made. Ask your inviter to send the link again, sign out, then click the link and sign in again. |
+| I already have a Call5 account from before | No problem! Clicking "Sign in with Google" will log you into your existing account. Your existing recruiter relationship is preserved. |
 
 ---
 
-## Scenario 2: New User Signup - Local Authentication with Invite Code
+## 2.3 Signing Up with Email and Password (Option B)
 
-### Purpose
-Verify that a new user can create an account using email and password when they have a valid invite code.
+If you prefer not to use Google, you can create an account with your email address and a password.
 
-### Prerequisites
-- [ ] A valid invite code obtained from an existing user (see Scenario 1, Part A)
-- [ ] An email address that is **not** already registered in Call5
-- [ ] Use an incognito/private browser window to ensure a clean session
+### What You Need
+- The invite link you received
+- A valid email address you can access (for verification)
+- A password that meets the requirements (see below)
 
-### Step-by-Step Instructions
+### Steps
 
-**Part A: Navigate to the Signup Page**
+**Creating Your Account:**
 
-1. Open an **incognito/private browser window**.
-2. Paste the invite URL into the address bar and press Enter:
-   ```
-   https://voter-engagement-app.onrender.com/?ref=XXXXXXXXXXXXXXXXXXXX
-   ```
-3. The Landing Page loads. The invite code is now stored in your session.
-4. In the blue header, click the semi-transparent **"Sign up with Email"** button (below the "or" divider).
+1. Click the invite link you received, or paste it into your browser's address bar and press Enter.
+2. The Call5 landing page loads.
+3. In the blue header area, click the **"Sign up with Email"** button. It's a semi-transparent button below the Google sign-in option, separated by an "or" divider.
 
    `[Screenshot: Landing page with "Sign up with Email" button highlighted]`
 
-5. The **Sign Up** page loads (`/signup`). The page has:
-   - A blue header with "Call5 Democracy" and "Create your account"
-   - Page label "Sign Up" in the top-right corner of the header
-   - Heading: **"Sign Up with Email"**
-   - Subtitle: "Join Call5 to engage with your civic community."
+4. The **Sign Up** page loads. You'll see a form with the heading **"Sign Up with Email"** and the subtitle "Join Call5 to engage with your civic community."
+5. Fill in the form:
 
-**Part B: Fill Out the Registration Form**
+   | Field | What to Enter |
+   |-------|--------------|
+   | **Full Name** | Your first and last name |
+   | **Email Address** | A valid email you can check right away |
+   | **Password** | A password (see requirements below) |
+   | **Confirm Password** | Type the same password again |
 
-6. Fill in the following fields:
+6. **Password requirements** (shown below the password field):
+   - At least **8 characters** long
+   - Must include at least one **uppercase letter** (A-Z)
+   - Must include at least one **lowercase letter** (a-z)
+   - Must include at least one **number** (0-9)
 
-   | Field | Input | Notes |
-   |-------|-------|-------|
-   | **Full Name** | Your full name | Required. Placeholder: "Your name" |
-   | **Email Address** | A valid, unused email | Required. Placeholder: "you@example.com" |
-   | **Password** | A strong password | Required. Placeholder: "Create a password" |
-   | **Confirm Password** | Same password again | Required. Placeholder: "Confirm your password" |
+   Example of a valid password: `MyPassword1`
 
-7. Note the password requirements displayed below the Password field:
-   > "At least 8 characters with uppercase, lowercase, and a number"
+7. Click the blue **"Create Account"** button.
 
-8. Click the blue **"Create Account"** button.
+   `[Screenshot: Signup form filled in with all fields]`
 
-   `[Screenshot: Signup form with all fields filled in]`
+**Verifying Your Email:**
 
-**Part C: Email Verification**
-
-9. A green success banner appears at the top of the Login page:
+8. You'll see a green banner message:
    > "Account created! Please check your email to verify your account."
-10. Check the email inbox for the address you registered with. Look for a verification email from Call5 Democracy.
-11. Click the verification link in the email.
-12. After verification, navigate to the Login page: `https://voter-engagement-app.onrender.com/login`
+9. Check your email inbox for a verification message from Call5 Democracy. (Check your spam/junk folder if you don't see it within a few minutes.)
+10. Click the **verification link** in the email to confirm your address.
 
-**Part D: First Login**
+**Logging In for the First Time:**
 
-13. On the **Log In** page (`/login`):
-    - Page label reads "Log In" in the top-right of the blue header
-    - Heading: **"Log In"**
-    - Subtitle: "Sign in to your Call5 account."
-14. Enter your **Email Address** and **Password**.
-15. Click the blue **"Log In"** button.
-16. A green success banner appears: **"Welcome back, [Your Name]!"**
-17. You are redirected to the **Dashboard** page.
-18. Verify the dashboard displays:
+11. After clicking the verification link, go to: `https://voter-engagement-app.onrender.com/login`
+12. On the **Log In** page, enter your **Email Address** and **Password**.
+13. Click the blue **"Log In"** button.
+14. A green banner appears: **"Welcome back, [Your Name]!"**
+15. You are taken to your **Dashboard**. Verify you see:
     - **"Welcome, [Your Name]!"**
-    - **"Recruited by: [Inviter's Name]"** (confirming the invite code was captured)
-    - **"0"** People Recruited
-    - Your unique invite link
+    - **"Recruited by: [Name]"** (the person who sent you the invite link)
+    - Stats showing **"0"** People Recruited
+    - Your own unique invite link
 
-   `[Screenshot: Dashboard after first local auth login showing recruiter attribution]`
+   `[Screenshot: Dashboard after first email/password login]`
 
-### Expected Results
-
-| Step | Expected Result |
-|------|----------------|
-| 5 | Signup page loads with all four form fields |
-| 9 | Green success message on login page, verification email sent |
-| 16 | "Welcome back" message appears |
-| 18 | Dashboard shows recruiter name and 0 recruits |
-
-### Success Criteria
-- [ ] Account created with email/password
-- [ ] Verification email received
-- [ ] Login successful after verification
-- [ ] "Recruited by: [Inviter Name]" displays correctly
-- [ ] Inviter's recruit count increased by 1
-
-### Edge Cases
-
-**Duplicate email:**
-- Attempt to sign up with an email that is already registered
-- **Expected:** Red error banner: **"Email already registered. Please log in."** Redirects to the Login page.
-
-**Weak password (missing uppercase):**
-- Enter a password like `password1` (no uppercase letter)
-- **Expected:** Red error banner with a message indicating the password does not meet requirements.
-
-**Weak password (too short):**
-- Enter a password like `Ab1` (under 8 characters)
-- **Expected:** Red error banner indicating minimum length not met.
-
-**Passwords do not match:**
-- Enter different values in Password and Confirm Password
-- **Expected:** Red error banner: **"Passwords do not match"**
-
-**Missing fields:**
-- Leave one or more fields empty and click "Create Account"
-- **Expected:** Red error banner: **"All fields are required"** (or browser native validation prevents submission)
-
-**Missing invite code:**
-- Navigate directly to `https://voter-engagement-app.onrender.com/signup` without first visiting the landing page with a `?ref=` code
-- **Expected:** Account is created but no recruiter is assigned. Dashboard shows no "Recruited by" line.
+Your account is set up! Continue to [Section 2.4](#24-your-first-time-on-the-dashboard) to learn about your Dashboard.
 
 ### Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| No verification email received | Check spam/junk folder. Wait up to 5 minutes for delivery. |
-| "Please verify your email before logging in" | Click the verification link in your email first. If the link expired, use the "resend verification" option on the login page. |
-| Account locked message | After 5 failed login attempts, the account locks for 30 minutes. Wait and try again. |
+| I see a red error: **"All fields are required"** | Make sure every field is filled in before clicking "Create Account." |
+| I see a red error: **"Passwords do not match"** | Re-type both the Password and Confirm Password fields carefully. They must be identical. |
+| I see a red error about password requirements | Your password needs at least 8 characters, one uppercase letter, one lowercase letter, and one number. Try a stronger password. |
+| I see: **"Email already registered. Please log in."** | You already have an account with this email. Go to the Login page and sign in instead. |
+| I never received the verification email | Check your spam/junk folder. Wait up to 5 minutes. If it still doesn't arrive, go to the login page and look for a "resend verification" option. |
+| I see: **"Please verify your email before logging in"** | You need to click the verification link in the email you received during signup. Check your inbox (and spam folder). |
+| My Dashboard doesn't show "Recruited by" anyone | Make sure you clicked the **invite link** (the URL with `?ref=...`) before signing up. The invite code is captured when you first load that page. |
 
 ---
 
-## Scenario 3: Returning User Login - Google Authentication Flow
+## 2.4 Your First Time on the Dashboard
 
-### Purpose
-Verify that an existing user can log in via Google OAuth and navigate to their dashboard with all expected data displayed.
+Your Dashboard is your home base on Call5. Here's what you'll find:
 
-### Prerequisites
-- [ ] An existing Call5 account created with Google OAuth
-- [ ] Know which Google account was used for registration
+`[Screenshot: Full Dashboard with all sections labeled]`
 
-### Step-by-Step Instructions
+### Header
+- Your **name** is displayed in the blue header
+- **"Sign Out"** button (top right area)
+- Page label "Dashboard" in the top-right corner
 
-1. Open a browser and navigate to: `https://voter-engagement-app.onrender.com/`
-2. The **Landing Page** loads with the title **"Voter Engagement Response Form"**.
-3. In the blue header, locate the authentication buttons. For an unauthenticated user, you see:
-   - A white **"Sign in with Google"** button with the four-color Google logo
-   - A semi-transparent **"Sign up with Email"** button
-   - A link: "Already have an account? **Log in**"
+### Welcome Section
+- **"Welcome, [Your Name]!"**
+- **"Recruited by: [Name]"** - shows who invited you to Call5
 
-   `[Screenshot: Landing page for unauthenticated user showing auth buttons]`
+### Stats Card
+- A large blue number showing how many **People Recruited** you have
+- As a new member, this starts at **0** and grows as people sign up using your invite link
 
-4. Click the white **"Sign in with Google"** button.
-5. Google's account selection screen appears. Select your previously registered Google account.
-6. You are redirected back to the **Landing Page** (`/`).
-7. The header now shows:
-   - Your **email address** displayed in the blue header area
-   - A **"Dashboard"** button (white semi-transparent, to the right of your email)
-   - A **"Sign Out"** button (white semi-transparent, next to Dashboard)
-   - The Name field in the form below is now **hidden** (only the Comment field remains)
+### Your Invite Link
+- A text field with your unique invite link
+- Click the blue **"Copy"** button to copy it to your clipboard
+- Share this link with others to recruit them (they'll be connected to you in the network)
 
-   `[Screenshot: Landing page for authenticated user showing email, Dashboard, and Sign Out]`
+### Action Buttons
+Your Dashboard has a vertical list of blue buttons. Here's what each one does:
 
-8. Click the **"Dashboard"** button in the header.
-9. The **Dashboard** page loads (`/dashboard`). Verify the following elements:
+| Button | What It Does |
+|--------|-------------|
+| **Share Your Invite Link** | Opens a page with your invite link, an email form, and pre-written messages for social media |
+| **Message Your Recruiter** | Send a message to the person who invited you |
+| **Message Your Recruits** | Send a message to people you've recruited (available after your first recruit) |
+| **Messages** | View your message inbox |
+| **Create Group** | Start a new group (available after your first recruit) |
+| **Your Groups** | View groups you belong to or lead |
+| **View All Concerns** | Browse civic issues posted by the community |
+| **Submit Voter Question** | Ask a question to an AI candidate personality |
+| **Tree** | View the recruitment network as a text list or interactive graph |
 
-   **Header Section:**
-   - Page label "Dashboard" in top-right corner
-   - Title: **"Call5 Democracy"**
-   - Your name displayed below the title
-   - **"Sign Out"** button
+> **Note:** Some buttons appear grayed out when you first join. For example, **"Message Your Recruits"** shows "(No Recruits)" and **"Create Group"** shows "(Recruit first)" until you've recruited at least one person. They'll become active as your network grows.
 
-   **Welcome Section:**
-   - **"Welcome, [Your Name]!"**
-   - If you were recruited: **"Recruited by: [Recruiter's Name]"**
+---
 
-   **Stats Card:**
-   - A large blue number showing your **recruit count**
-   - Label: **"People Recruited"**
+## 2.5 Logging In on Future Visits (Google)
 
-   **Invite Link Section:**
-   - Label: **"Your Invite Link"**
-   - A read-only text field with your invite URL
-   - A blue **"Copy"** button
+When you come back to Call5 after signing out or closing your browser:
 
-   **Action Buttons** (vertical stack of full-width blue buttons):
-   - **"Share Your Invite Link"**
-   - **"Message Your Recruiter"** (grayed out if no recruiter, showing "(No Recruiter)")
-   - **"Message Your Recruits"** (grayed out if 0 recruits, showing "(No Recruits)")
-   - **"Messages"**
-   - **"Create Group"** (grayed out if 0 recruits, showing "(Recruit first)")
-   - **"Your Groups"**
-   - **"View All Concerns"**
-   - **"Submit Voter Question"**
-   - **"Admin"** (visible only if you are an admin user)
-   - **"Tree"**
+1. Go to `https://voter-engagement-app.onrender.com/`
+2. Click the white **"Sign in with Google"** button in the blue header.
+3. Select your Google account (if you have multiple, pick the one you used to sign up).
+4. You'll land back on the landing page with your email displayed in the header.
+5. Click **"Dashboard"** to go to your Dashboard.
 
-   `[Screenshot: Full dashboard showing all sections and action buttons]`
-
-### Expected Results
-
-| Step | Expected Result |
-|------|----------------|
-| 6 | Redirected to landing page with email shown in header |
-| 7 | Dashboard and Sign Out buttons visible; Name field hidden |
-| 9 | Dashboard loads with welcome message, stats, invite link, and all action buttons |
-
-### Success Criteria
-- [ ] Google OAuth login completes without errors
-- [ ] Landing page shows user email, Dashboard button, and Sign Out button
-- [ ] Dashboard displays correct user name
-- [ ] Recruit count is accurate
-- [ ] Invite link is present and the Copy button works
-- [ ] Recruiter attribution shows correctly (if applicable)
-- [ ] Disabled buttons display with gray styling and explanatory text
-
-### Verification Points
-- **User email in header:** Visible on both landing page (after login) and dashboard
-- **Recruitment attribution:** "Recruited by: [Name]" only shows if the user was recruited
-- **Recruit count accuracy:** The number should match the actual count of users who signed up using this user's invite code
-- **Invite code display:** The invite URL should contain a 20-character code unique to this user
+That's it! Google handles the authentication, so there's no password to remember.
 
 ### Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| Stuck on Google account selection | Clear browser cookies for Google, then retry |
-| Dashboard shows wrong recruit count | Refresh the page. Counts are computed on page load. |
-| "Dashboard" button not visible | You may not be logged in. Check that your email appears in the header. |
+| Google sign-in loops back without logging me in | Clear your browser cookies for the Call5 site and try again. Or try an incognito/private window. |
+| I don't see the "Dashboard" button after signing in | Look for your email address in the blue header area. The "Dashboard" button should be right next to it. If you don't see your email, the sign-in didn't complete. Try again. |
 
 ---
 
-## Scenario 4: Returning User Login - Local Authentication Flow
+## 2.6 Logging In on Future Visits (Email/Password)
 
-### Purpose
-Verify that an existing user can log in with their email and password and navigate to their dashboard.
+When you come back to Call5 after signing out or closing your browser:
 
-### Prerequisites
-- [ ] An existing Call5 account created with email/password (local auth)
-- [ ] Know the registered email and password
-- [ ] Email has been verified
+1. Go to `https://voter-engagement-app.onrender.com/`
+2. Click the **"Log in"** link in the blue header (text reads: "Already have an account? **Log in**").
+3. The Login page loads with two fields:
+   - **Email Address** (placeholder: "you@example.com")
+   - **Password** (placeholder: "Your password")
+4. Enter your email and password, then click the blue **"Log In"** button.
+5. A green banner shows: **"Welcome back, [Your Name]!"**
+6. You're taken to your Dashboard.
 
-### Step-by-Step Instructions
-
-1. Open a browser and navigate to: `https://voter-engagement-app.onrender.com/`
-2. The **Landing Page** loads.
-3. In the blue header, click the **"Log in"** text link below the auth buttons. (Text reads: "Already have an account? **Log in**")
-4. The **Log In** page loads (`/login`).
-   - Blue header with "Call5 Democracy" and "Welcome back"
-   - Page label "Log In" in top-right of header
-   - Heading: **"Log In"**
-   - Subtitle: "Sign in to your Call5 account."
-
-   `[Screenshot: Login page with email and password fields]`
-
-5. Enter your **Email Address** in the first field (placeholder: "you@example.com").
-6. Enter your **Password** in the second field (placeholder: "Your password").
-7. Click the blue **"Log In"** button.
-8. A green success banner appears at the top: **"Welcome back, [Your Name]!"**
-9. You are redirected to the **Dashboard** page (`/dashboard`).
-10. Verify all dashboard elements as described in Scenario 3, Step 9.
-
-    `[Screenshot: Dashboard after successful local auth login]`
-
-### Expected Results
-
-| Step | Expected Result |
-|------|----------------|
-| 4 | Login page loads with email, password fields, and "Forgot password?" link |
-| 8 | Green "Welcome back" banner appears |
-| 9 | Redirected to Dashboard with all expected elements |
-
-### Success Criteria
-- [ ] Login with correct credentials succeeds
-- [ ] "Welcome back" message includes user's name
-- [ ] Dashboard displays all expected sections and buttons
-- [ ] Recruit count, invite link, and recruiter attribution are accurate
-
-### Edge Cases
-
-**Incorrect password:**
-- Enter a valid email but wrong password
-- **Expected:** Red error banner: **"Invalid email or password"**. Stay on the login page.
-
-**Non-existent email:**
-- Enter an email that has never been registered
-- **Expected:** Red error banner: **"Invalid email or password"** (same message as incorrect password for security).
-
-**Unverified email:**
-- Attempt to log in before verifying your email
-- **Expected:** Red error banner: **"Please verify your email before logging in. Check your inbox or resend verification."**
-
-**Account lockout (brute force protection):**
-- Enter the wrong password 5 times in a row
-- **Expected:** Red error banner: **"Account locked for 30 minutes due to multiple failed login attempts"**. All further login attempts show: **"Account locked for X more minutes due to failed login attempts"**
-
-**Forgot password:**
-- Click the **"Forgot password?"** link below the password field (right-aligned, blue text)
-- **Expected:** Navigates to the password reset page where you can request a reset email
-
-### Additional Navigation
-- The Login page also has:
-  - A **"Sign in with Google"** button (full-width, white with gray border) below an "or" divider
-  - A **"Sign up"** link at the bottom: "Don't have an account? **Sign up**"
+### If You Forgot Your Password
+- On the Login page, click the **"Forgot password?"** link (blue text, right-aligned below the password field).
+- Follow the instructions to reset your password via email.
 
 ### Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| "Invalid email or password" but credentials are correct | Check for typos. Ensure you're using the correct email (case-sensitive for local auth). |
-| Account locked | Wait 30 minutes, or contact an admin to unlock. |
-| No "Welcome back" banner | If redirected to dashboard without the banner, login still succeeded. The banner may have been dismissed. |
+| **"Invalid email or password"** | Double-check your email and password for typos. Email is case-sensitive. |
+| **"Account locked for X minutes"** | After 5 incorrect password attempts, your account locks for 30 minutes for security. Wait and try again. |
+| **"Please verify your email before logging in"** | You need to click the verification link from the email you received when you first signed up. Check your inbox and spam folder. |
+| I forgot which email I used | Try each email you might have used. If you signed up with Google, use the Google sign-in button instead. |
 
 ---
 
-## Scenario 5: Viewing Concerns - Navigate and Read Full Text
+## 2.7 Exploring Concerns
 
-### Purpose
-Verify that users can browse the concerns list, view individual concern details, and interact with the rich text content.
+Concerns are civic issues that Call5 members share with the community. You can browse and read concerns posted by other members.
 
-### Prerequisites
-- [ ] Logged in as any authenticated user
-- [ ] At least one concern exists in the system (see Appendix A for test data)
-
-### Step-by-Step Instructions
-
-**Part A: Navigate to All Concerns**
-
-1. From the **Dashboard**, scroll down the action buttons to find the **"View All Concerns"** button. It is a full-width blue button located after "Your Groups" and before "Submit Voter Question".
-
-   `[Screenshot: Dashboard action buttons with "View All Concerns" highlighted]`
-
-2. Click **"View All Concerns"**.
-3. The **All Concerns** page loads (`/concerns/all`). Verify the following:
-   - Blue header with "Call5 Democracy" and your name
-   - **"Sign Out"** button in the header
-   - Page label "All Concerns" in the top-right of the header
+1. From your Dashboard, click the **"View All Concerns"** button.
+2. The **All Concerns** page loads, showing:
    - Heading: **"All Concerns"**
    - Subheading: "Civic issues from across the Call5 community"
-   - A concern count line: **"X total concern(s)"** (e.g., "3 total concerns")
+   - A count of total concerns (e.g., "3 total concerns")
 
-   `[Screenshot: All Concerns page showing the concerns list]`
+3. Each concern appears as a card with:
+   - **Title** (click to read the full concern)
+   - **Scope badge** on the right:
+     - **"Group Only"** (blue badge) - visible to group members
+     - **"Network-Wide"** (green badge) - visible to the broader network
+   - **Metadata:** "Posted by [Name] - [Group Name] - [Date]"
+   - **Preview:** First 200 characters of the description
 
-**Part B: Browse the Concerns List**
+   `[Screenshot: All Concerns page showing concern cards with badges]`
 
-4. Each concern is displayed as a **card** with the following information:
-   - **Title** (clickable, in dark text that turns blue on hover)
-   - **Scope badge** on the right side of the header:
-     - **"Group Only"** - light blue badge (blue text on pale blue background)
-     - **"Network-Wide"** - green badge (green text on pale green background)
-   - **Metadata line:** "Posted by [Author Name] &bull; [Group Name] &bull; [Date]"
-   - **Preview text:** First 200 characters of the concern description (HTML tags stripped), followed by "..." if truncated
+4. Click a **concern title** to open it and read the full text.
+5. The concern detail page shows:
+   - The full **title** as a large heading
+   - **Author**, **date and time**, **group name**, and **scope badge**
+   - The complete **description** with rich text formatting (bold, italic, headings, lists, links, blockquotes)
 
-5. Concerns are sorted with the **most recent first** (newest at the top).
-6. Note: There is no client-side filtering or search. All visible concerns are shown.
+   `[Screenshot: A concern detail page with rich text formatting]`
 
-**Part C: View a Specific Concern**
+6. To go back, click **"&larr; Back to [Group Name]"** at the top of the page, or use your browser's back button.
 
-7. Click on a **concern title** to view its full details.
-8. The **Concern View** page loads (`/concerns/[id]`). Verify:
-   - A **back link** at the top: **"&larr; Back to [Group Name]"** (clicking this returns to the group page)
-   - **Concern title** displayed as a large heading
-   - **Metadata row** with:
-     - "Posted by **[Author Name]**"
-     - Full date and time (e.g., "February 10, 2026 at 03:45 PM")
-     - Group name
-     - Scope badge (Group Only or Network-Wide)
-   - **Full description** rendered as rich text (with formatting: bold, italic, headings, bullet lists, numbered lists, blockquotes, and links)
-
-   `[Screenshot: Concern detail page showing rich text formatting]`
-
-9. If the concern contains rich text formatting, verify it renders correctly:
-   - **Bold text** appears bold
-   - **Italic text** appears italic
-   - **Headings (H2, H3)** appear in blue (#2c5aa0), larger than body text
-   - **Bullet lists** and **numbered lists** are properly indented
-   - **Blockquotes** appear with a blue left border and italic text
-   - **Links** appear in blue and are clickable
-
-**Part D: Navigate Back**
-
-10. Click the **"&larr; Back to [Group Name]"** link at the top of the concern to return to the group management page.
-    - Alternatively, use the browser's back button to return to the All Concerns page.
-
-**Part E: Empty State (if applicable)**
-
-11. If no concerns exist, the All Concerns page shows:
-    - "No concerns posted yet."
-    - "Be the first to share a civic issue with your community!"
-    - A **"Go to Your Groups"** button (centered, blue)
-
-### Expected Results
-
-| Step | Expected Result |
-|------|----------------|
-| 3 | All Concerns page loads with count and concern cards |
-| 4 | Each card shows title, scope badge, metadata, and preview |
-| 8 | Full concern detail page with formatted rich text |
-| 9 | All rich text formatting renders correctly |
-
-### Success Criteria
-- [ ] All Concerns page loads and shows correct concern count
-- [ ] Concern cards display title, scope badge, author, group, date, and preview
-- [ ] Preview text shows first 200 characters with HTML stripped
-- [ ] Clicking a concern title opens the full detail view
-- [ ] Rich text content renders with proper formatting (bold, lists, headings, etc.)
-- [ ] Scope badges show correct colors (blue for Group, green for Network)
-- [ ] Back navigation works correctly
-
-### Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "You do not have permission to view this concern" | Group-scoped concerns require group membership. Network-scoped concerns require being in the creator's recruit network. |
-| Rich text appears as plain HTML tags | The concern was created before the rich text editor was enabled. This is expected for older concerns. |
-| No concerns visible | Ensure concerns exist in the system. See Appendix A for creating test data. |
+> **Note:** If you see a message saying "You do not have permission to view this concern," it means the concern is group-scoped and you're not a member of that group. Network-wide concerns are visible to everyone in the creator's recruit network.
 
 ---
 
-## Scenario 6: Network Tree Visualization - Access and Interact
+## 2.8 Viewing Your Network Tree
 
-### Purpose
-Verify that users can access the network tree visualization, switch between text and graph views, and interact with the graphical representation of the recruitment network.
+The network tree shows how Call5 members are connected through recruitment. Even as a new member, you can see the full network.
 
-### Prerequisites
-- [ ] Logged in as any authenticated user
-- [ ] At least 2-3 users exist in the system with recruitment relationships
+1. From your Dashboard, click the **"Tree"** button (near the bottom of the action buttons).
+2. The **Text View** loads first, showing a simple indented list:
+   - Each line shows a member's **name** and their **recruit count**
+   - Deeper indentation means that person was recruited by the person above them
+   - You should be able to find your own name in the tree, indented under the person who invited you
 
-### Step-by-Step Instructions
+   `[Screenshot: Text View of the network tree]`
 
-**Part A: Navigate to the Tree Page**
+3. To see a visual map, click the **"🌳 Graph View"** tab at the top.
+4. An interactive graph appears:
+   - **Blue boxes** represent members (larger boxes = more recruits)
+   - **Arrows** point from recruiters to their recruits
+   - The graph flows **left to right** (founders on the left, newest members on the right)
 
-1. From the **Dashboard**, scroll to the bottom of the action buttons.
-2. Click the **"Tree"** button (a full-width blue button near the bottom of the list, after "Submit Voter Question").
+   `[Screenshot: Graph View showing the visual network]`
 
-   `[Screenshot: Dashboard with "Tree" button highlighted]`
+5. **How to interact with the graph:**
+   - **Click and drag** a box to move it around
+   - **Scroll** (mouse wheel) to zoom in or out
+   - **Click on a box** to see the member's name and email
+   - On mobile: use pinch-to-zoom and drag gestures
 
-3. The **Network Tree - Text View** page loads (`/admin/network`). Verify:
-   - Blue header with "Call5 Democracy" and your email
-   - Page label "Network Tree" in the top-right
-   - **"Sign Out"** button in the header
-   - Two tabs at the top of the content area
+6. **Buttons above the graph:**
+   - **"Fit to Screen"** - Resets the view to show all members
+   - **"Toggle Physics"** - Makes nodes bounce and settle (click again to stop)
+   - **"Export Image"** - Downloads the graph as a picture file (PNG)
 
-**Part B: Text View**
+7. Below the graph, a **"How to Use"** legend explains all the interactions.
 
-4. The page opens on the **Text View** tab by default. Verify the tab bar:
-   - **"📋 Text View"** tab - currently active (white background, dark blue bottom border)
-   - **"🌳 Graph View"** tab - inactive (gray background)
+8. To go back, click **"Back to Dashboard"** (blue button in the header on Graph View, or a link below the tree on Text View).
 
-5. Below the tabs, a gray container displays the **tree structure** as an indented text list:
-   - Each node shows: **[Name]** ([X] recruit(s))
-   - Child nodes are indented to the right (25px per level) to show hierarchy
-   - The root user (no recruiter) appears at the leftmost position
-   - Users recruited by the root appear one indent level in
-   - Their recruits appear two indent levels in, and so on
-
-   `[Screenshot: Text View showing indented tree structure]`
-
-6. Below the tree, a **"&larr; Back to Dashboard"** link returns to the dashboard.
-
-**Part C: Graph View**
-
-7. Click the **"🌳 Graph View"** tab.
-8. The **Network Graph** page loads (`/admin/network-graph`). This page has a different layout:
-   - A white header bar with "Call5 Democracy - Network Graph" on the left
-   - Your email, a blue **"Back to Dashboard"** button, and a gray **"Sign Out"** button on the right
-
-9. Below the header, verify the tab bar:
-   - **"📋 Text View"** tab - inactive
-   - **"🌳 Graph View"** tab - active (white background, dark blue bottom border)
-
-10. Below the tabs:
-    - Heading: **"Recruitment Network"**
-    - Three control buttons on the right:
-      - **"Fit to Screen"**
-      - **"Toggle Physics"**
-      - **"Export Image"**
-
-11. The main area contains a **600px-tall interactive graph** rendered using vis.js. Verify:
-    - **Nodes** appear as blue rectangular boxes with rounded corners
-    - Each node displays: `[Name]` on the first line, `([X] recruits)` on the second line
-    - **Arrows** (edges) point from recruiter to recruited users
-    - The graph flows **left-to-right** (root users on the left, recruits to the right)
-    - Node **sizes vary**: users with more recruits have larger boxes
-
-    `[Screenshot: Graph View showing the visual network with nodes and arrows]`
-
-**Part D: Interact with the Graph**
-
-12. **Click and drag** a node to reposition it within the graph.
-13. **Scroll** (mouse wheel) to zoom in and out of the graph.
-14. **Click on a node** to view member details. An alert dialog appears showing:
-    ```
-    Member: [Name]
-    ([X] recruits)
-    Email: [user@email.com]
-    ```
-15. Click **"Fit to Screen"** to re-center and auto-scale the graph to show all nodes.
-16. Click **"Toggle Physics"** to enable physics simulation (nodes will shift and settle; click again to disable).
-17. Click **"Export Image"** to download a PNG image of the graph. The file saves as `call5-network-graph.png` with a white background.
-
-**Part E: Legend / How to Use**
-
-18. Below the graph, verify the **"How to Use"** legend section:
-    - "🖱️ Click & Drag:" Move nodes around
-    - "🔍 Scroll:" Zoom in/out
-    - "👆 Click Node:" View member details
-    - "📏 Box Size:" Larger = more recruits
-    - "🎨 Box Color:" Shows group membership
-
-**Part F: Switch Between Views**
-
-19. Click the **"📋 Text View"** tab to return to the text view.
-20. Verify the text tree is displayed again.
-21. Click **"🌳 Graph View"** to return to the graph view.
-22. Verify the graph reloads and displays correctly.
-
-### Expected Results
-
-| Step | Expected Result |
-|------|----------------|
-| 3 | Text View page loads with tab bar and indented tree |
-| 8 | Graph View page loads with interactive vis.js graph |
-| 11 | Nodes display as blue boxes with names and recruit counts |
-| 14 | Clicking a node shows an alert with name, recruits, and email |
-| 17 | PNG file downloads with white background |
-
-### Success Criteria
-- [ ] Text View shows all users in a properly indented tree hierarchy
-- [ ] Graph View renders an interactive vis.js network visualization
-- [ ] Graph flows left-to-right with arrows showing recruitment direction
-- [ ] Node sizes reflect recruit counts (larger = more recruits)
-- [ ] Clicking a node displays member name and email
-- [ ] "Fit to Screen" re-centers the graph
-- [ ] "Toggle Physics" toggles node simulation on/off
-- [ ] "Export Image" downloads a PNG with white background
-- [ ] Switching between Text and Graph tabs works without errors
-- [ ] "Back to Dashboard" navigation works from both views
-
-### Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| Graph area is blank/empty | Wait a few seconds for the vis.js library to load from CDN. Check internet connection. |
-| Nodes are overlapping | Click "Fit to Screen" to re-layout, or "Toggle Physics" to let nodes spread out. |
-| Export Image is blank or transparent | Ensure you are not zoomed in too far. Click "Fit to Screen" first, then export. |
-| Mobile: Graph is hard to interact with | The graph container is 400px on mobile. Use pinch-to-zoom and drag gestures. Navigation buttons appear automatically on touch devices. |
+> **Tip:** As you recruit people, you'll see your part of the tree grow. Check back to watch your network expand!
 
 ---
 
-## Appendix A: Test Data Setup
+# Appendices
 
-### Required Test Accounts
+---
 
-For complete scenario coverage, the following test accounts should exist:
+## Appendix A: Test Data Setup (For Admins)
 
-| Account | Auth Type | Recruited By | Has Recruits | Notes |
-|---------|-----------|--------------|--------------|-------|
-| Admin User | Google | None (root) | Yes | Has `is_admin=True` in database |
-| Regular User 1 | Local | Admin User | Yes | Has at least 1 recruit |
-| Regular User 2 | Google | Regular User 1 | No | New user for testing |
-| New Test User | (to be created) | Any existing user | No | Use for signup scenarios |
+This section is for platform administrators setting up test data. Regular users can skip this.
 
 ### Creating Test Concerns
 
-To test Scenario 5, at least one concern should exist:
+To ensure the Concerns feature has content for new users to explore:
 
-1. Log in as any user who is a **member** of a group.
+1. Log in as a user who is a **member** of a group.
 2. From the Dashboard, click **"Your Groups"**.
-3. Click on a group name to go to the group management page.
-4. Scroll to the **"Concerns"** section at the bottom of the group page.
-5. Click the **"Post a Concern"** button.
-6. On the **Post a Concern** page:
-   - Enter a **title** (e.g., "Test Concern - Rich Text Features")
-   - Use the **Quill rich text editor** toolbar to write a description with various formatting:
-     - Add a **bold** word
-     - Add an *italic* word
-     - Create a bullet list
-     - Create a numbered list
-     - Add a heading (H2 or H3)
-     - Add a blockquote
-     - Add a link
+3. Click on a group name to open its management page.
+4. Scroll to the **"Concerns"** section at the bottom.
+5. Click **"Post a Concern"**.
+6. On the Post a Concern page:
+   - Enter a **title** (e.g., "Support Local Transit Improvements")
+   - Use the **rich text editor** toolbar to format the description:
+     - Add **bold** and *italic* text
+     - Create bullet and numbered lists
+     - Add headings (H2 or H3)
+     - Add blockquotes and links
    - Click **"Post Concern"**
-7. The concern appears on the group page and in the All Concerns list.
+7. The concern appears in the group and on the All Concerns page.
 
-### Creating Recruitment Relationships
+### Ensuring Recruitment Chains
 
-To test Scenario 6 (Network Tree), ensure at least a 3-level recruitment chain:
+For the Network Tree to be meaningful, ensure at least a 3-level recruitment chain exists:
 
-1. Root user (no recruiter) recruits User A
+1. Root user (the original account, no recruiter) recruits User A
 2. User A recruits User B
 3. User B recruits User C
 
-This creates a tree: Root → A → B → C
+This creates a visible tree: Root > A > B > C
 
 ### Invite Code Reference
 
@@ -736,34 +579,32 @@ Each user's invite code can be found on their Dashboard in the "Your Invite Link
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
-| Page loads very slowly | Render free tier cold start | Wait 30-60 seconds. The service may need to wake up. Subsequent requests will be fast. |
-| White page / 500 error | Server error | Refresh the page. If persistent, check the Render service status. |
-| Session expired / logged out unexpectedly | Session timeout | Log in again. Sessions may expire after extended inactivity. |
-| Page looks broken on mobile | CSS rendering issue | Try rotating your device. Ensure you're using a modern browser (Chrome, Safari, Firefox). |
+| The page takes a long time to load | The server may be waking up from a sleep state | Wait 30-60 seconds and refresh. Subsequent pages will load quickly. |
+| I see a white page or error | A temporary server issue | Refresh the page. If it persists, try again in a few minutes. |
+| I got logged out unexpectedly | Session expired | Log in again. Sessions may expire after extended inactivity. |
+| The page looks broken on my phone | Display rendering issue | Try rotating your phone. Make sure you're using an up-to-date browser (Chrome, Safari, or Firefox). |
 
-### Authentication Issues
+### Sign-In Issues
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
-| Google login loops back to landing page without logging in | OAuth callback error | Clear all cookies for the site. Try an incognito window. |
-| "Invalid email or password" with correct credentials | Possible case sensitivity | Ensure email is entered exactly as registered. |
-| Cannot sign in with Google after creating local account | Different auth types | If you registered with email/password, use the Login page, not Google sign-in (unless your email matches a Google account). |
+| Google sign-in keeps looping without logging me in | OAuth session error | Clear all cookies for the site, or try in an incognito/private window. |
+| "Invalid email or password" but I'm sure my credentials are right | Possible typo or case mismatch | Re-type your email carefully. If you signed up with Google, use the Google button instead of email/password. |
+| "Account locked for X minutes" | Too many failed login attempts | Wait for the lockout period to end (30 minutes), then try again with the correct password. |
 
 ### Concerns Issues
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
-| "Post a Concern" button not visible | Not a group member | You must be a member of the group to post concerns. Join a group first. |
-| Rich text toolbar not appearing | CDN load failure | Check internet connection. Quill.js loads from `cdn.quilljs.com`. |
-| Concern description appears empty after posting | Editor empty on submit | Ensure you typed in the editor area (below the toolbar), not in the title field. |
+| I can't see the "Post a Concern" button | You're not a member of the group | You need to be a group member to post. Ask the group leader to add you. |
+| The rich text toolbar doesn't appear | The toolbar library didn't load | Check your internet connection and refresh the page. |
+| My concern description appears empty after posting | You may have typed outside the editor area | Make sure you click inside the white editor area (below the toolbar) before typing. |
 
-### Browser Compatibility Notes
+### Browser Notes
 
-- **Chrome (recommended):** Full support for all features
-- **Firefox:** Full support
-- **Safari:** Google OAuth may require allowing cross-site tracking in Settings > Privacy
-- **Edge:** Full support
-- **Mobile browsers:** All features work. Graph view uses 400px container height on screens under 768px wide.
+- **Chrome** is recommended for the best experience
+- **Safari** users: If Google sign-in doesn't work, go to Safari > Settings > Privacy and uncheck "Prevent cross-site tracking"
+- **Mobile browsers:** All features work. The graph view adjusts to a smaller size on phone screens.
 
 ---
 
