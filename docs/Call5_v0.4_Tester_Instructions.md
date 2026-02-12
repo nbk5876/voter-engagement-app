@@ -75,7 +75,7 @@ Your invite link is a unique URL that connects new members to you when they sign
    ```
 5. Click the blue **"Copy"** button next to the link. The button text briefly changes to **"Copied!"** to confirm the link is on your clipboard.
 
-   `[Screenshot: Dashboard showing the "Your Invite Link" section with Copy button]`
+   ![Dashboard showing the Your Invite Link section with Copy button](images/full-dashboard-all-sections-labled.png)
 
 > **Tip:** Your invite code is the 20-character string after `?ref=`. This code is unique to you and never changes.
 
@@ -99,8 +99,6 @@ For more sharing options, click the **"Share Your Invite Link"** button on your 
 - Pre-written **copy-and-paste messages** for five platforms:
   - Nextdoor, Twitter, Bluesky, Mastodon, and Email
   - Each message includes your invite link and is ready to copy
-
-   `[Screenshot: Share page showing platform cards with pre-written messages]`
 
 **What to tell people:**
 
@@ -208,7 +206,7 @@ The network tree shows the full recruitment hierarchy, so you can see how your n
    - **"Toggle Physics"** - Enables/disables node animation
    - **"Export Image"** - Downloads the graph as a PNG file
 
-   `[Screenshot: Graph View showing the recruitment network visualization]`
+   ![Graph View showing the recruitment network visualization](images/network-tree-graph-view.png)
 
 ---
 
@@ -256,14 +254,12 @@ This is the fastest way to join. You'll use your existing Google account - no ne
 2. A page titled **"Voter Engagement Response Form"** loads. This is the Call5 landing page.
 3. In the blue header area, look for the white **"Sign in with Google"** button. It has the familiar four-color Google "G" logo next to the text.
 
-   `[Screenshot: Landing page showing the "Sign in with Google" button]`
+   ![Landing page showing the Sign in with Google button](images/landing-page-email-signup.png)
 
 4. Click **"Sign in with Google"**.
 5. Google's account selection screen appears. Choose the Google account you want to use for Call5.
 6. If this is your first time, Google may ask you to approve Call5 Democracy's access. Click **"Allow"** or **"Continue"**.
 7. You are redirected back to the Call5 landing page. Your email now appears in the blue header area, along with two new buttons: **"Dashboard"** and **"Sign Out"**.
-
-   `[Screenshot: Landing page after successful Google sign-in showing email and Dashboard button]`
 
 8. Click the **"Dashboard"** button to go to your personal Dashboard.
 9. Your Dashboard loads. You should see:
@@ -272,7 +268,7 @@ This is the fastest way to join. You'll use your existing Google account - no ne
    - A stats card showing **"0"** People Recruited (this will grow as you invite others)
    - **"Your Invite Link"** section with your own unique link for recruiting others
 
-   `[Screenshot: New member's Dashboard showing welcome message and recruiter attribution]`
+   ![New member's Dashboard showing welcome message and recruiter attribution](images/member_dashboard.png)
 
 That's it! Your account is created and ready to use. Continue to [Section 2.4](#24-your-first-time-on-the-dashboard) to learn about your Dashboard.
 
@@ -304,7 +300,7 @@ If you prefer not to use Google, you can create an account with your email addre
 2. The Call5 landing page loads.
 3. In the blue header area, click the **"Sign up with Email"** button. It's a semi-transparent button below the Google sign-in option, separated by an "or" divider.
 
-   `[Screenshot: Landing page with "Sign up with Email" button highlighted]`
+   ![Landing page with Sign up with Email button](images/landing-page-email-signup.png)
 
 4. The **Sign Up** page loads. You'll see a form with the heading **"Sign Up with Email"** and the subtitle "Join Call5 to engage with your civic community."
 5. Fill in the form:
@@ -326,7 +322,7 @@ If you prefer not to use Google, you can create an account with your email addre
 
 7. Click the blue **"Create Account"** button.
 
-   `[Screenshot: Signup form filled in with all fields]`
+   ![Signup form filled in with all fields](images/email-signup-form-filled.png)
 
 **Verifying Your Email:**
 
@@ -347,7 +343,7 @@ If you prefer not to use Google, you can create an account with your email addre
     - Stats showing **"0"** People Recruited
     - Your own unique invite link
 
-   `[Screenshot: Dashboard after first email/password login]`
+   ![Dashboard after first email/password login](images/dashboard-after-first-email-password-login.png)
 
 Your account is set up! Continue to [Section 2.4](#24-your-first-time-on-the-dashboard) to learn about your Dashboard.
 
@@ -369,7 +365,7 @@ Your account is set up! Continue to [Section 2.4](#24-your-first-time-on-the-das
 
 Your Dashboard is your home base on Call5. Here's what you'll find:
 
-`[Screenshot: Full Dashboard with all sections labeled]`
+![Full Dashboard with all sections labeled](images/full-dashboard-all-sections-labled.png)
 
 ### Header
 - Your **name** is displayed in the blue header
@@ -475,15 +471,13 @@ Concerns are civic issues that Call5 members share with the community. You can b
    - **Metadata:** "Posted by [Name] - [Group Name] - [Date]"
    - **Preview:** First 200 characters of the description
 
-   `[Screenshot: All Concerns page showing concern cards with badges]`
+   ![All Concerns page showing concern cards with badges](images/all-concerns-page.png)
 
 4. Click a **concern title** to open it and read the full text.
 5. The concern detail page shows:
    - The full **title** as a large heading
    - **Author**, **date and time**, **group name**, and **scope badge**
    - The complete **description** with rich text formatting (bold, italic, headings, lists, links, blockquotes)
-
-   `[Screenshot: A concern detail page with rich text formatting]`
 
 6. To go back, click **"&larr; Back to [Group Name]"** at the top of the page, or use your browser's back button.
 
@@ -501,7 +495,7 @@ The network tree shows how Call5 members are connected through recruitment. Even
    - Deeper indentation means that person was recruited by the person above them
    - You should be able to find your own name in the tree, indented under the person who invited you
 
-   `[Screenshot: Text View of the network tree]`
+   ![Text View of the network tree](images/network-tree-text-view.png)
 
 3. To see a visual map, click the **"🌳 Graph View"** tab at the top.
 4. An interactive graph appears:
@@ -509,7 +503,7 @@ The network tree shows how Call5 members are connected through recruitment. Even
    - **Arrows** point from recruiters to their recruits
    - The graph flows **left to right** (founders on the left, newest members on the right)
 
-   `[Screenshot: Graph View showing the visual network]`
+   ![Graph View showing the visual network](images/network-tree-graph-view.png)
 
 5. **How to interact with the graph:**
    - **Click and drag** a box to move it around
