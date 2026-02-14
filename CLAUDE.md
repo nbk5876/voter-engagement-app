@@ -1,7 +1,7 @@
 # Call5 Democracy - Project Context
 
 ## Vision
-Call5 Democracy is a **hub-and-spoke civic engagement platform** that orchestrates notifications across existing social networks (Nextdoor, Bluesky, Mastodon, email) rather than creating another platform. The hub (Call5) hosts substantive discussions while spokes deliver notifications to members via their preferred channels.
+Call5 Democracy is envisioned as a **hub-and-spoke civic engagement platform** that orchestrates notifications across existing social networks (Nextdoor, Bluesky, Mastodon, email) rather than creating another platform. The hub (Call5) hosts substantive discussions while spokes deliver notifications to members via their preferred channels.
 
 ## Architecture
 ![Service Stack](diagrams/Voter%20Engagement%20Prototype%20Service%20Stack.png)
